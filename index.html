@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>JAPN1200 Conjugation</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f18"/>
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
+      <div>
+        <h1>JAPN1200 Conjugation</h1>
+        <div class="sub">Offline-friendly • typing default • mix-and-match forms</div>
+      </div>
+    </div>
+
+    <div class="pills">
+      <div class="pill" id="pillTotal">Verbs: —</div>
+      <div class="pill" id="pillAdj">Adjectives: —</div>
+      <div class="pill" id="pillStars">⭐ —</div>
+    </div>
+
+    <div class="tabs">
+      <button class="tabbtn active" data-tab="study">Study</button>
+      <button class="tabbtn" data-tab="view">View Vocab</button>
+      <button class="tabbtn" data-tab="stats">Stats</button>
+      <button class="tabbtn" data-tab="settings">Settings</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-study" class="card">
+      <h2 style="margin:0 0 10px">Study setup</h2>
+
+      <div class="row">
+        <div>
+          <label>Word type</label>
+          <div class="row" style="margin-top:10px; gap:14px">
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="wordType" value="verbs" checked> Verbs</label>
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="wordType" value="adjs"> Adjectives</label>
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="wordType" value="both"> Both</label>
+          </div>
+        </div>
+
+        <div>
+          <label>Question mode</label>
+          <select id="questionMode">
+            <option value="dict_to_conj">Dictionary → Conjugation</option>
+            <option value="conj_to_dict">Conjugation → Dictionary</option>
+            <option value="mixed">Mixed</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="sep"/>
+
+      <div class="row">
+        <div id="verbFormsBox">
+          <label>Verbs: which forms?</label>
+          <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="present" checked> Present (ます)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="negative" checked> Negative (ません)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="past" checked> Past (ました)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="past_negative" checked> Past negative (ませんでした)</label>
+          </div>
+        </div>
+
+        <div id="adjFormsBox" class="hidden">
+          <label>Adjectives: which forms?</label>
+          <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="negative" checked> Negative</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="past" checked> Past</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="past_negative" checked> Past negative</label>
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep"/>
+
+      <div class="row">
+        <div>
+          <label>Answer type</label>
+          <select id="answerType">
+            <option value="typing" selected>Typing (default)</option>
+            <option value="mc">Multiple choice</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Display mode</label>
+          <select id="displayMode">
+            <option value="kana">Kana</option>
+            <option value="kanji">Kanji</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Questions</label>
+          <input type="number" id="questionCount" min="1" max="200" value="20"/>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="starredOnly"> Starred only</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showEnglish"> Show English</label>
+      </div>
+
+      <div class="btnrow">
+        <button class="primary" id="btnStart">Start</button>
+        <button class="secondary" id="btnPracticeStar">Practice ⭐</button>
+      </div>
+
+      <small class="help">Shortcuts: Enter submit/next • 1–4 pick choice • ` star • = replay audio • / focus input</small>
+    </section>
+
+    <section id="tab-quiz" class="card hidden">
+      <div class="quizTop">
+        <div style="min-width:220px">
+          <div class="meta" id="quizMeta">—</div>
+          <div class="progress" style="margin-top:8px"><div id="quizBar"></div></div>
+        </div>
+        <div class="row" style="justify-content:flex-end; flex:0">
+          <button class="ghost" id="btnReplay">= Audio</button>
+          <button class="secondary starBtn" id="btnStar" title="Toggle star (`)">☆</button>
+          <button class="ghost" id="btnExit">Exit</button>
+        </div>
+      </div>
+
+      <div class="prompt" id="prompt">—</div>
+      <div class="meta" id="subPrompt"></div>
+
+      <div id="typingBox" style="margin-top:10px">
+        <input type="text" id="answerInput" placeholder="Type answer…">
+        <div class="btnrow">
+          <button class="primary" id="btnSubmit">Enter / Check</button>
+          <button class="secondary hidden" id="btnNext">Next</button>
+        </div>
+      </div>
+
+      <div id="mcBox" class="hidden">
+        <div class="choiceGrid" id="choices"></div>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+    </section>
+
+    <section id="tab-view" class="card hidden">
+      <h2 style="margin:0 0 10px">View vocab</h2>
+      <div class="row">
+        <div>
+          <label>Set</label>
+          <select id="viewSet">
+            <option value="verbs">Verbs</option>
+            <option value="adjs">Adjectives</option>
+          </select>
+        </div>
+        <div>
+          <label>Display</label>
+          <select id="viewDisplay">
+            <option value="kana">Kana</option>
+            <option value="kanji">Kanji</option>
+          </select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="viewSort">
+            <option value="default">Default</option>
+            <option value="starred">Starred first</option>
+            <option value="alpha">A→Z (kana)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="viewStarOnly"> Starred only</label>
+        <button class="secondary" id="btnViewReset" style="flex:0">Reset</button>
+        <input type="text" id="viewSearch" placeholder="Search kana / kanji / English…">
+      </div>
+
+      <div id="viewCount" class="meta" style="margin-top:10px">—</div>
+
+      <table class="table" id="viewTable">
+        <thead>
+          <tr>
+            <th style="width:70px">⭐</th>
+            <th>JP</th>
+            <th>Forms</th>
+            <th style="width:260px">EN</th>
+          </tr>
+        </thead>
+        <tbody id="viewBody"></tbody>
+      </table>
+    </section>
+
+    <section id="tab-stats" class="card hidden">
+      <h2 style="margin:0 0 10px">Stats</h2>
+      <div id="statsBox" class="meta">—</div>
+      <hr class="sep"/>
+      <div class="btnrow">
+        <button class="secondary" id="btnResetStats">Reset stats</button>
+      </div>
+      <small class="help">Stats are saved only on this device/browser.</small>
+    </section>
+
+    <section id="tab-settings" class="card hidden">
+      <h2 style="margin:0 0 10px">Settings</h2>
+
+      <div class="row">
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setAudioOn"> Audio on</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setAutoplay"> Autoplay audio</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setSmart"> Smart grading</label>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>Volume</label>
+          <input type="number" id="setVol" min="0" max="1" step="0.05" value="0.9"/>
+          <small class="help">0.0 – 1.0</small>
+        </div>
+        <div>
+          <label>Default display mode</label>
+          <select id="setDisplay">
+            <option value="kana">Kana</option>
+            <option value="kanji">Kanji</option>
+          </select>
+        </div>
+        <div>
+          <label>Default questions</label>
+          <input type="number" id="setQCount" min="1" max="200" value="20"/>
+        </div>
+      </div>
+
+      <hr class="sep"/>
+
+      <div class="row">
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setShowEnglish"> Show English (default)</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setStarOnly"> Starred only (default)</label>
+      </div>
+
+      <hr class="sep"/>
+
+      <h3 style="margin:0 0 8px">Grammar style</h3>
+      <label style="display:block; margin-top:8px">
+        <input type="checkbox" id="setDewa">
+        Accept ではありません-style (also accept ではありません / ではありませんでした for な-adjectives)
+      </label>
+
+      <hr class="sep"/>
+
+      <h3 style="margin:0 0 8px">Audio folder</h3>
+      <small class="help">
+        Put your audio files in <b>/audio</b> named exactly <code>&lt;id&gt;.&lt;ext&gt;</code>.<br/>
+        Supported: .wav, .mp3, .m4a, .ogg
+      </small>
+
+      <div class="btnrow" style="margin-top:14px">
+        <button class="secondary" id="btnAudioCheck">Audio self-check</button>
+        <button class="secondary" id="btnResetStars">Reset stars</button>
+      </div>
+
+      <div id="audioStatus" class="meta" style="margin-top:10px"></div>
+      <small class="help">Stars and stats are saved only on this device/browser.</small>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
