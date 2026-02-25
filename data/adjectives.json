@@ -1,0 +1,6 @@
+[
+  { "id": "adj_001", "jp_kana": "きれい", "jp_kanji": "", "en": "beautiful; clean", "type": "adj", "class": "na" },
+  { "id": "adj_002", "jp_kana": "あたらしい", "jp_kanji": "新しい", "en": "new", "type": "adj", "class": "i" },
+  { "id": "adj_003", "jp_kana": "しずか", "jp_kanji": "静か", "en": "quiet", "type": "adj", "class": "na" },
+  { "id": "adj_004", "jp_kana": "おおきい", "jp_kanji": "大きい", "en": "big", "type": "adj", "class": "i" }
+]

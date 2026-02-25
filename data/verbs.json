@@ -1,0 +1,7 @@
+[
+  { "id": "verb_001", "jp_kana": "たべる", "jp_kanji": "食べる", "en": "to eat", "type": "verb", "class": "ichidan" },
+  { "id": "verb_002", "jp_kana": "いく", "jp_kanji": "行く", "en": "to go", "type": "verb", "class": "godan" },
+  { "id": "verb_003", "jp_kana": "のむ", "jp_kanji": "飲む", "en": "to drink", "type": "verb", "class": "godan" },
+  { "id": "verb_004", "jp_kana": "する", "jp_kanji": "", "en": "to do", "type": "verb", "class": "irregular" },
+  { "id": "verb_005", "jp_kana": "くる", "jp_kanji": "来る", "en": "to come", "type": "verb", "class": "irregular" }
+]
