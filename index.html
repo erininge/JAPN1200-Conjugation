@@ -15,7 +15,7 @@
       <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
       <div>
         <h1>JAPN1200 Conjugation</h1>
-        <div class="sub">Offline-friendly • typing default • mix-and-match forms • v1.1.0</div>
+        <div class="sub">Offline-friendly • typing default • mix-and-match forms • v1.2.0</div>
       </div>
     </div>
 
@@ -109,6 +109,7 @@
       <div class="row" style="margin-top:10px">
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="starredOnly"> Starred only</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showEnglish"> Show English</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showHint"> Show hint</label>
       </div>
 
       <div class="btnrow">
@@ -133,7 +134,8 @@
       </div>
 
       <div class="prompt" id="prompt">—</div>
-      <div class="meta" id="subPrompt"></div>
+      <div class="meta enLine" id="englishPrompt"></div>
+      <div class="answerMeta" id="subPrompt"></div>
 
       <div id="typingBox" style="margin-top:10px">
         <input type="text" id="answerInput" placeholder="Type answer…">
@@ -240,6 +242,7 @@
 
       <div class="row">
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setShowEnglish"> Show English (default)</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setShowHint"> Show hint (default)</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setStarOnly"> Starred only (default)</label>
       </div>
 

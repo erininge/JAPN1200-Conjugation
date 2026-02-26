@@ -13,6 +13,7 @@ export function loadSettings() {
     smartGrading: true,
     displayMode: "kana", // kana|kanji
     showEnglish: false,
+    showHint: true,
     starredOnly: false,
     questionCount: 20,
     acceptDewaArimasen: false
