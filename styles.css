@@ -50,6 +50,8 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0}
 .progress > div{height:100%;background:rgba(122,167,255,0.55);width:0%}
 .prompt{font-size:28px;font-weight:700;letter-spacing:0.3px;margin:10px 0 6px}
 .meta{color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.answerMeta{color:var(--muted);font-size:17px; margin-top:10px}
+.enLine{font-size:14px; margin-top:2px}
 .choiceGrid{display:grid;gap:10px;margin-top:12px}
 .choice{border:1px solid var(--line);background:rgba(0,0,0,0.22);padding:12px 12px;border-radius:14px;cursor:pointer;display:flex;gap:10px;align-items:center}
 .choice strong{width:22px;color:var(--muted)}

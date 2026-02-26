@@ -103,6 +103,7 @@ function loadDefaultsToStudyUI() {
   $("#questionCount").value = settings.questionCount;
   $("#starredOnly").checked = settings.starredOnly;
   $("#showEnglish").checked = settings.showEnglish;
+  $("#showHint").checked = settings.showHint;
 }
 
 function loadSettingsUI() {
@@ -113,6 +114,7 @@ function loadSettingsUI() {
   $("#setDisplay").value = settings.displayMode;
   $("#setQCount").value = settings.questionCount;
   $("#setShowEnglish").checked = settings.showEnglish;
+  $("#setShowHint").checked = settings.showHint;
   $("#setStarOnly").checked = settings.starredOnly;
   $("#setDewa").checked = settings.acceptDewaArimasen;
 }
@@ -125,6 +127,7 @@ function saveSettingsFromUI() {
   settings.displayMode = $("#setDisplay").value;
   settings.questionCount = Number($("#setQCount").value || 20);
   settings.showEnglish = $("#setShowEnglish").checked;
+  settings.showHint = $("#setShowHint").checked;
   settings.starredOnly = $("#setStarOnly").checked;
   settings.acceptDewaArimasen = $("#setDewa").checked;
   saveSettings(settings);
@@ -189,7 +192,8 @@ function readStudySetup() {
     displayMode: $("#displayMode").value,
     questionCount: Number($("#questionCount").value || 20),
     starredOnly: $("#starredOnly").checked,
-    showEnglish: $("#showEnglish").checked
+    showEnglish: $("#showEnglish").checked,
+    showHint: $("#showHint").checked
   };
 }
 
@@ -254,10 +258,16 @@ function startSession(setup, forceStarred=false) {
   renderQuestion();
 }
 
-function describeForm(itemType, form) {
-  const mapV = { present:"Present (ます)", negative:"Negative (ません)", past:"Past (ました)", past_negative:"Past negative (ませんでした)" };
+function describeFormBase(itemType, form) {
+  const mapV = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
   const mapA = { negative:"Negative", past:"Past", past_negative:"Past negative" };
   return (itemType === "verb") ? mapV[form] : mapA[form];
+}
+
+function describeFormHint(itemType, form) {
+  if (itemType !== "verb") return "";
+  const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)" };
+  return map[form] || "";
 }
 
 function renderQuestion() {
@@ -266,28 +276,38 @@ function renderQuestion() {
 
   const total = session.questions.length;
   const n = session.idx + 1;
-  $("#quizMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} • ${describeForm(q.item.type, q.form)} • ${q.direction === "dict_to_conj" ? "Dict→Conj" : "Conj→Dict"}`;
+  $("#quizMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} • ${q.direction === "dict_to_conj" ? "Dict→Conj" : "Conj→Dict"}`;
   $("#quizBar").style.width = `${(n-1)/total*100}%`;
 
   $("#btnStar").textContent = isStarred(q.item.id) ? "★" : "☆";
 
   let promptJP = "";
   let expected = [];
-  const sub = [];
+  let answerLabel = "";
 
   if (q.direction === "dict_to_conj") {
     promptJP = getJP(q.item, displayMode);
     expected = getExpectedAnswers(q.item, q.form);
-    sub.push("Answer: conjugation");
+    const base = describeFormBase(q.item.type, q.form);
+    const hint = session.setup.showHint ? ` ${describeFormHint(q.item.type, q.form)}` : "";
+    answerLabel = `Answer: ${base}${hint}`.trim();
   } else {
     promptJP = getConjugated(q.item, q.form, displayMode);
     expected = [q.item.jp_kana, ...(q.item.jp_kanji ? [q.item.jp_kanji] : [])];
-    sub.push("Answer: dictionary form");
+    answerLabel = "Answer: Dictionary";
   }
 
   $("#prompt").textContent = promptJP;
-  if (showEnglish && q.item.en) sub.push(`EN: ${q.item.en}`);
-  $("#subPrompt").textContent = sub.join(" • ");
+  $("#subPrompt").textContent = answerLabel;
+
+  const englishLine = $("#englishPrompt");
+  if (showEnglish && q.item.en) {
+    englishLine.textContent = q.item.en;
+    englishLine.classList.remove("hidden");
+  } else {
+    englishLine.textContent = "";
+    englishLine.classList.add("hidden");
+  }
 
   $("#feedback").textContent = "";
   $("#feedback").className = "feedback";
@@ -625,7 +645,7 @@ function initEvents() {
     renderView();
   });
 
-  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setStarOnly","setDewa"].forEach(id => {
+  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa"].forEach(id => {
     $("#"+id).addEventListener("change", saveSettingsFromUI);
   });
 
