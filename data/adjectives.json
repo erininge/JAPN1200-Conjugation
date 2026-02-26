@@ -1,6 +1,20 @@
 [
-  { "id": "adj_001", "jp_kana": "きれい", "jp_kanji": "", "en": "beautiful; clean", "type": "adj", "class": "na" },
-  { "id": "adj_002", "jp_kana": "あたらしい", "jp_kanji": "新しい", "en": "new", "type": "adj", "class": "i" },
-  { "id": "adj_003", "jp_kana": "しずか", "jp_kanji": "静か", "en": "quiet", "type": "adj", "class": "na" },
-  { "id": "adj_004", "jp_kana": "おおきい", "jp_kanji": "大きい", "en": "big", "type": "adj", "class": "i" }
+  { "id": "adj_001", "jp_kana": "たかい", "jp_kanji": "高い", "en": "expensive", "type": "adj", "class": "i" },
+  { "id": "adj_002", "jp_kana": "やすい", "jp_kanji": "安い", "en": "inexpensive; cheap", "type": "adj", "class": "i" },
+  { "id": "adj_003", "jp_kana": "あたらしい", "jp_kanji": "新しい", "en": "new", "type": "adj", "class": "i" },
+  { "id": "adj_004", "jp_kana": "ふるい", "jp_kanji": "古い", "en": "old (thing)", "type": "adj", "class": "i" },
+  { "id": "adj_005", "jp_kana": "あつい", "jp_kanji": "暑い", "en": "hot", "type": "adj", "class": "i" },
+  { "id": "adj_006", "jp_kana": "さむい", "jp_kanji": "寒い", "en": "cold (weather)", "type": "adj", "class": "i" },
+  { "id": "adj_007", "jp_kana": "おおきい", "jp_kanji": "大きい", "en": "big", "type": "adj", "class": "i" },
+  { "id": "adj_008", "jp_kana": "ちいさい", "jp_kanji": "小さい", "en": "small", "type": "adj", "class": "i" },
+  { "id": "adj_009", "jp_kana": "おもしろい", "jp_kanji": "面白い", "en": "interesting; funny", "type": "adj", "class": "i" },
+  { "id": "adj_010", "jp_kana": "つまらない", "jp_kanji": "", "en": "boring", "type": "adj", "class": "i" },
+  { "id": "adj_011", "jp_kana": "むずかしい", "jp_kanji": "難しい", "en": "difficult", "type": "adj", "class": "i" },
+  { "id": "adj_012", "jp_kana": "やさしい", "jp_kanji": "優しい", "en": "easy; kind (person)", "type": "adj", "class": "i" },
+  { "id": "adj_013", "jp_kana": "いそがしい", "jp_kanji": "忙しい", "en": "busy", "type": "adj", "class": "i" },
+  { "id": "adj_014", "jp_kana": "いい", "jp_kanji": "", "en": "good", "type": "adj", "class": "i" },
+  { "id": "adj_015", "jp_kana": "きれい", "jp_kanji": "綺麗", "en": "beautiful; clean", "type": "adj", "class": "na" },
+  { "id": "adj_016", "jp_kana": "しずか", "jp_kanji": "静か", "en": "quiet", "type": "adj", "class": "na" },
+  { "id": "adj_017", "jp_kana": "にぎやか", "jp_kanji": "賑やか", "en": "lively", "type": "adj", "class": "na" },
+  { "id": "adj_018", "jp_kana": "ひま", "jp_kanji": "暇", "en": "not busy; to have free time", "type": "adj", "class": "na" }
 ]

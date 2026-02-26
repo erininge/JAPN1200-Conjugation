@@ -65,6 +65,16 @@ function getExpectedAnswers(item, form) {
   return base;
 }
 
+function getAudioBaseNames(item, form = null) {
+  if (form) return [`${item.id}_${form}`, item.id];
+  return [item.id];
+}
+
+function getPrimaryAudioPath(item, form = null) {
+  const [base] = getAudioBaseNames(item, form);
+  return `audio/${base}.wav`;
+}
+
 function isStarred(id) { return !!stars[id]; }
 function toggleStar(id) {
   stars[id] = !stars[id];
@@ -340,16 +350,23 @@ function buildAndShowChoices(_correctAnswer, q) {
   $("#mcBox").classList.remove("hidden");
 }
 
-function playAudioForItem(item) {
+function playAudioForItem(item, form = null) {
   if (!settings.audioOn) return;
   const exts = ["wav","mp3","m4a","ogg"];
-  const base = `./audio/${item.id}`;
   const audio = new Audio();
   audio.volume = settings.volume;
+
+  const paths = [];
+  for (const baseName of getAudioBaseNames(item, form)) {
+    for (const ext of exts) {
+      paths.push(`./audio/${baseName}.${ext}`);
+    }
+  }
+
   let idx = 0;
   const tryNext = () => {
-    if (idx >= exts.length) return;
-    audio.src = `${base}.${exts[idx++]}`;
+    if (idx >= paths.length) return;
+    audio.src = paths[idx++];
     audio.play().catch(() => tryNext());
   };
   tryNext();
@@ -400,7 +417,10 @@ function checkAnswer(userAnswer) {
   $("#btnSubmit").classList.add("hidden");
   $("#quizBar").style.width = `${(session.idx+1)/session.questions.length*100}%`;
 
-  if (settings.autoplayAudio) playAudioForItem(q.item);
+  if (settings.autoplayAudio) {
+    const audioForm = (q.direction === "dict_to_conj") ? q.form : null;
+    playAudioForItem(q.item, audioForm);
+  }
 }
 
 function nextQuestionOrFinish() {
@@ -509,7 +529,7 @@ function renderView() {
     tdStar.appendChild(b);
 
     const tdJP = document.createElement("td");
-    tdJP.innerHTML = `<div style='font-weight:700'>${getJP(it, display)}</div><div class='meta'>${it.type === "verb" ? "verb" : (it.class === "na" ? "な-adj" : "い-adj")}</div>`;
+    tdJP.innerHTML = `<div style='font-weight:700'>${getJP(it, display)}</div><div class='meta'>${it.type === "verb" ? "verb" : (it.class === "na" ? "な-adj" : "い-adj")}</div><div class='meta'>${getPrimaryAudioPath(it)}</div>`;
 
     const tdForms = document.createElement("td");
     const chips = document.createElement("div");
@@ -532,7 +552,11 @@ function renderView() {
         chips.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
         c.classList.add("active");
         const conj = getConjugated(it, form, display) || getConjugated(it, form, "kana");
-        out.textContent = conj || "(no conjugation)";
+        if (!conj) {
+          out.textContent = "(no conjugation)";
+          return;
+        }
+        out.innerHTML = `<div>${conj}</div><div class='meta'>${getPrimaryAudioPath(it, form)}</div>`;
       });
       chips.appendChild(c);
     });
@@ -583,7 +607,8 @@ function initEvents() {
   $("#btnReplay").addEventListener("click", () => {
     const q = session?.questions?.[session.idx];
     if (!q) return;
-    playAudioForItem(q.item);
+    const audioForm = (q.direction === "dict_to_conj") ? q.form : null;
+    playAudioForItem(q.item, audioForm);
   });
 
   $("#viewSet").addEventListener("change", renderView);
