@@ -11,9 +11,22 @@ let adjs = [];
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+function showToast(message) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = message;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => el.remove(), 220);
+  }, 1800);
+}
+
 function setTab(name) {
   $$(".tabbtn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   $("#tab-study").classList.toggle("hidden", name !== "study");
+  $("#tab-type").classList.toggle("hidden", name !== "type");
   $("#tab-view").classList.toggle("hidden", name !== "view");
   $("#tab-stats").classList.toggle("hidden", name !== "stats");
   $("#tab-settings").classList.toggle("hidden", name !== "settings");
@@ -22,6 +35,7 @@ function setTab(name) {
 
 function showQuiz() {
   $("#tab-study").classList.add("hidden");
+  $("#tab-type").classList.add("hidden");
   $("#tab-view").classList.add("hidden");
   $("#tab-stats").classList.add("hidden");
   $("#tab-settings").classList.add("hidden");
@@ -104,6 +118,11 @@ function loadDefaultsToStudyUI() {
   $("#starredOnly").checked = settings.starredOnly;
   $("#showEnglish").checked = settings.showEnglish;
   $("#showHint").checked = settings.showHint;
+
+  $("#typeDisplayMode").value = settings.displayMode;
+  $("#typeQuestionCount").value = settings.questionCount;
+  $("#typeStarredOnly").checked = settings.starredOnly;
+  $("#typeShowEnglish").checked = settings.showEnglish;
 }
 
 function loadSettingsUI() {
@@ -178,6 +197,160 @@ async function fetchData() {
 }
 
 let session = null;
+let typeSession = null;
+
+
+
+function readTypeSetup() {
+  const wt = $$("input[name='typeWordType']").find(r => r.checked)?.value || "verbs";
+  return {
+    wt,
+    displayMode: $("#typeDisplayMode").value,
+    questionCount: Number($("#typeQuestionCount").value || 20),
+    starredOnly: $("#typeStarredOnly").checked,
+    showEnglish: $("#typeShowEnglish").checked
+  };
+}
+
+function buildTypePool(setup) {
+  let items = [];
+  if (setup.wt === "verbs") items = verbs.slice();
+  else if (setup.wt === "adjs") items = adjs.slice();
+  else items = verbs.concat(adjs);
+
+  if (setup.starredOnly) items = items.filter(it => isStarred(it.id));
+  return items;
+}
+
+function startTypeSession(setup) {
+  const pool = buildTypePool(setup);
+  if (pool.length === 0) {
+    alert("No items matched your selection (try turning off Starred only or add words).");
+    return;
+  }
+
+  const questions = [];
+  for (let i=0;i<setup.questionCount;i++) questions.push({ item: randPick(pool), answered:false, correct:false });
+
+  typeSession = { setup, idx:0, questions, awaitingNext:false, lastChoices:[] };
+  $("#typeGame").classList.remove("hidden");
+  renderTypeQuestion();
+}
+
+function getTypeChoices(item) {
+  if (item.type === "verb") return [
+    { label: "Ichidan", value: "ichidan" },
+    { label: "Godan", value: "godan" },
+    { label: "Irregular", value: "irregular" }
+  ];
+  return [
+    { label: "な-adjective", value: "na" },
+    { label: "い-adjective", value: "i" }
+  ];
+}
+
+function renderTypeQuestion() {
+  const q = typeSession.questions[typeSession.idx];
+  const total = typeSession.questions.length;
+  const n = typeSession.idx + 1;
+
+  $("#typeMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} type`;
+  $("#typeBar").style.width = `${(n-1)/total*100}%`;
+  $("#typePrompt").textContent = getJP(q.item, typeSession.setup.displayMode);
+  $("#typeSubPrompt").textContent = q.item.type === "verb" ? "Answer: Verb type" : "Answer: Adjective type";
+  $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+
+  const englishLine = $("#typeEnglishPrompt");
+  if (typeSession.setup.showEnglish && q.item.en) {
+    englishLine.textContent = q.item.en;
+    englishLine.classList.remove("hidden");
+  } else {
+    englishLine.textContent = "";
+    englishLine.classList.add("hidden");
+  }
+
+  const options = getTypeChoices(q.item);
+  typeSession.lastChoices = options;
+  const box = $("#typeChoices");
+  box.innerHTML = "";
+  options.forEach((opt, i) => {
+    const div = document.createElement("div");
+    div.className = "choice";
+    div.dataset.index = String(i);
+    div.innerHTML = `<strong>${i+1}</strong><span>${opt.label}</span>`;
+    div.addEventListener("click", () => onChooseType(i));
+    box.appendChild(div);
+  });
+
+  $("#typeFeedback").textContent = "";
+  $("#typeFeedback").className = "feedback";
+  $("#btnTypeNext").classList.add("hidden");
+  typeSession.awaitingNext = false;
+}
+
+function recordTypeStats(q, correct) {
+  const bucket = (q.item.type === "verb") ? stats.verbs : stats.adjectives;
+  bucket.answered += 1;
+  if (correct) bucket.correct += 1;
+
+  const key = "type_guess";
+  bucket.perForm[key] = bucket.perForm[key] || { answered: 0, correct: 0 };
+  bucket.perForm[key].answered += 1;
+  if (correct) bucket.perForm[key].correct += 1;
+
+  saveStats(stats);
+}
+
+function checkTypeAnswer(selectedValue) {
+  const q = typeSession.questions[typeSession.idx];
+  if (typeSession.awaitingNext) return;
+
+  const correct = selectedValue === q.item.class;
+  q.answered = true;
+  q.correct = correct;
+  recordTypeStats(q, correct);
+
+  if (correct) {
+    $("#typeFeedback").textContent = "✓ Correct";
+    $("#typeFeedback").classList.add("good");
+  } else {
+    const options = getTypeChoices(q.item);
+    const label = options.find(x => x.value === q.item.class)?.label || q.item.class;
+    $("#typeFeedback").textContent = `✗ Not quite. Correct: ${label}`;
+    $("#typeFeedback").classList.add("bad");
+  }
+
+  typeSession.awaitingNext = true;
+  $("#btnTypeNext").classList.remove("hidden");
+  $("#typeBar").style.width = `${(typeSession.idx+1)/typeSession.questions.length*100}%`;
+
+  if (settings.autoplayAudio) playAudioForItem(q.item);
+}
+
+function onChooseType(i) {
+  const opt = typeSession.lastChoices?.[i];
+  if (!opt) return;
+  checkTypeAnswer(opt.value);
+  const nodes = $$("#typeChoices .choice");
+  nodes.forEach((n, idx) => {
+    n.classList.remove("correct", "wrong");
+    if (idx === i) n.classList.add(typeSession.questions[typeSession.idx].correct ? "correct" : "wrong");
+    if (typeSession.awaitingNext && typeSession.lastChoices[idx]?.value === typeSession.questions[typeSession.idx].item.class) n.classList.add("correct");
+  });
+}
+
+function nextTypeQuestionOrFinish() {
+  if (!typeSession) return;
+  if (typeSession.idx >= typeSession.questions.length - 1) {
+    setTab("stats");
+    renderStats();
+    typeSession = null;
+    $("#typeGame").classList.add("hidden");
+    return;
+  }
+  typeSession.idx += 1;
+  renderTypeQuestion();
+}
 
 function readStudySetup() {
   const wt = $$("input[name='wordType']").find(r => r.checked)?.value || "verbs";
@@ -264,11 +437,21 @@ function describeFormBase(itemType, form) {
   return (itemType === "verb") ? mapV[form] : mapA[form];
 }
 
-function describeFormHint(itemType, form) {
-  if (itemType !== "verb") return "";
-  const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)" };
+function describeFormHint(item, form) {
+  if (item.type === "verb") {
+    const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)" };
+    return map[form] || "";
+  }
+
+  if (item.class === "i") {
+    const map = { negative:"(〜くないです)", past:"(〜かったです)", past_negative:"(〜くなかったです)" };
+    return map[form] || "";
+  }
+
+  const map = { negative:"(〜じゃないです)", past:"(〜でした)", past_negative:"(〜じゃなかったです)" };
   return map[form] || "";
 }
+
 
 function renderQuestion() {
   const q = session.questions[session.idx];
@@ -289,7 +472,7 @@ function renderQuestion() {
     promptJP = getJP(q.item, displayMode);
     expected = getExpectedAnswers(q.item, q.form);
     const base = describeFormBase(q.item.type, q.form);
-    const hint = session.setup.showHint ? ` ${describeFormHint(q.item.type, q.form)}` : "";
+    const hint = session.setup.showHint ? ` ${describeFormHint(q.item, q.form)}` : "";
     answerLabel = `Answer: ${base}${hint}`.trim();
   } else {
     promptJP = getConjugated(q.item, q.form, displayMode);
@@ -641,11 +824,24 @@ function initEvents() {
 
   $("#btnStart").addEventListener("click", () => startSession(readStudySetup(), false));
   $("#btnPracticeStar").addEventListener("click", () => startSession(readStudySetup(), true));
+  $("#btnStartType").addEventListener("click", () => startTypeSession(readTypeSetup()));
+  $("#btnTypeNext").addEventListener("click", nextTypeQuestionOrFinish);
 
   $("#btnSubmit").addEventListener("click", () => checkAnswer($("#answerInput").value));
   $("#btnNext").addEventListener("click", nextQuestionOrFinish);
 
   $("#btnExit").addEventListener("click", () => { session = null; setTab("study"); loadDefaultsToStudyUI(); });
+
+  $("#btnTypeStar").addEventListener("click", () => {
+    const q = typeSession?.questions?.[typeSession.idx];
+    if (!q) return;
+    toggleStar(q.item.id);
+    $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+  });
+
+  $("#btnTypeReplay").addEventListener("click", () => {
+    showToast("Audio is not available at this time.");
+  });
 
   $("#btnStar").addEventListener("click", () => {
     const q = session?.questions?.[session.idx];
@@ -655,10 +851,7 @@ function initEvents() {
   });
 
   $("#btnReplay").addEventListener("click", () => {
-    const q = session?.questions?.[session.idx];
-    if (!q) return;
-    const audioForm = (q.direction === "dict_to_conj") ? q.form : null;
-    playAudioForItem(q.item, audioForm);
+    showToast("Audio is not available at this time.");
   });
 
   $("#viewSet").addEventListener("change", renderView);
@@ -695,25 +888,44 @@ function initEvents() {
   $("#btnAudioCheck").addEventListener("click", audioSelfCheck);
 
   window.addEventListener("keydown", (e) => {
-    if ($("#tab-quiz").classList.contains("hidden")) return;
+    const inConjQuiz = !$("#tab-quiz").classList.contains("hidden");
+    const inTypeQuiz = !$("#tab-type").classList.contains("hidden") && !$("#typeGame").classList.contains("hidden");
+    if (!inConjQuiz && !inTypeQuiz) return;
 
-    if (e.key === "/") { e.preventDefault(); $("#answerInput").focus(); }
-    if (e.key === "`") { e.preventDefault(); $("#btnStar").click(); }
-    if (e.key === "=") { e.preventDefault(); $("#btnReplay").click(); }
+    if (e.key === "/" && inConjQuiz) { e.preventDefault(); $("#answerInput").focus(); }
+    if (e.key === "`") {
+      e.preventDefault();
+      if (inConjQuiz) $("#btnStar").click();
+      else if (inTypeQuiz) $("#btnTypeStar").click();
+    }
+    if (e.key === "=") {
+      e.preventDefault();
+      if (inConjQuiz) $("#btnReplay").click();
+      else if (inTypeQuiz) $("#btnTypeReplay").click();
+    }
 
     if (e.key === "Enter") {
       e.preventDefault();
-      if (!session) return;
-      if (session.awaitingNext) $("#btnNext").click();
-      else {
-        if (session.setup.answerType === "mc") return;
-        $("#btnSubmit").click();
+      if (inConjQuiz) {
+        if (!session) return;
+        if (session.awaitingNext) $("#btnNext").click();
+        else {
+          if (session.setup.answerType === "mc") return;
+          $("#btnSubmit").click();
+        }
+      } else if (inTypeQuiz) {
+        if (!typeSession) return;
+        if (typeSession.awaitingNext) $("#btnTypeNext").click();
       }
     }
 
     if (["1","2","3","4"].includes(e.key)) {
-      if (session?.setup?.answerType !== "mc") return;
-      onChooseMC(Number(e.key) - 1);
+      if (inConjQuiz) {
+        if (session?.setup?.answerType !== "mc") return;
+        onChooseMC(Number(e.key) - 1);
+      } else if (inTypeQuiz) {
+        onChooseType(Number(e.key) - 1);
+      }
     }
   });
 }

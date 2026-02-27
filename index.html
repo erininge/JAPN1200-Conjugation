@@ -15,7 +15,7 @@
       <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
       <div>
         <h1>JAPN1200 Conjugation</h1>
-        <div class="sub">Offline-friendly • typing default • mix-and-match forms • v1.2.1</div>
+        <div class="sub">v1.3.1</div>
       </div>
     </div>
 
@@ -26,7 +26,8 @@
     </div>
 
     <div class="tabs">
-      <button class="tabbtn active" data-tab="study">Study</button>
+      <button class="tabbtn active" data-tab="study">Conjugate</button>
+      <button class="tabbtn" data-tab="type">Type</button>
       <button class="tabbtn" data-tab="view">View Vocab</button>
       <button class="tabbtn" data-tab="stats">Stats</button>
       <button class="tabbtn" data-tab="settings">Settings</button>
@@ -198,6 +199,70 @@
         </thead>
         <tbody id="viewBody"></tbody>
       </table>
+    </section>
+
+    <section id="tab-type" class="card hidden">
+      <h2 style="margin:0 0 10px">Type game setup</h2>
+
+      <div class="row">
+        <div>
+          <label>Question set</label>
+          <div class="row" style="margin-top:10px; gap:14px">
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="typeWordType" value="verbs" checked> Verbs</label>
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="typeWordType" value="adjs"> Adjectives</label>
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="typeWordType" value="both"> Both</label>
+          </div>
+        </div>
+
+        <div>
+          <label>Display mode</label>
+          <select id="typeDisplayMode">
+            <option value="kana">Kana</option>
+            <option value="kanji">Kanji</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Questions</label>
+          <input type="number" id="typeQuestionCount" min="1" max="200" value="20"/>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeStarredOnly"> Starred only</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeShowEnglish"> Show English</label>
+      </div>
+
+      <div class="btnrow">
+        <button class="primary" id="btnStartType">Start type game</button>
+      </div>
+
+      <hr class="sep"/>
+
+      <div id="typeGame" class="hidden">
+        <div class="quizTop">
+          <div style="min-width:220px">
+            <div class="meta" id="typeMeta">—</div>
+            <div class="progress" style="margin-top:8px"><div id="typeBar"></div></div>
+          </div>
+          <div class="row" style="justify-content:flex-end; flex:0">
+            <button class="ghost" id="btnTypeReplay">= Audio</button>
+            <button class="secondary starBtn" id="btnTypeStar" title="Toggle star (`)">☆</button>
+          </div>
+        </div>
+
+        <div class="prompt" id="typePrompt">—</div>
+        <div class="meta enLine" id="typeEnglishPrompt"></div>
+        <div class="answerMeta" id="typeSubPrompt">Answer: —</div>
+
+        <div class="choiceGrid" id="typeChoices"></div>
+
+        <div class="feedback" id="typeFeedback"></div>
+
+        <div class="btnrow">
+          <button class="secondary hidden" id="btnTypeNext">Next</button>
+        </div>
+      </div>
     </section>
 
     <section id="tab-stats" class="card hidden">
