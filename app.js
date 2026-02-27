@@ -331,9 +331,12 @@ function renderQuestion() {
 function buildAndShowChoices(_correctAnswer, q) {
   const { displayMode } = session.setup;
   const allItems = (q.item.type === "verb") ? verbs : adjs;
+  const formsForType = q.item.type === "verb"
+    ? ["present", "negative", "past", "past_negative"]
+    : ["negative", "past", "past_negative"];
 
-  const makeAnswerFor = (it) => {
-    if (q.direction === "dict_to_conj") return getConjugated(it, q.form, displayMode) || getConjugated(it, q.form, "kana");
+  const makeAnswerFor = (it, form = q.form) => {
+    if (q.direction === "dict_to_conj") return getConjugated(it, form, displayMode) || getConjugated(it, form, "kana");
     return getJP(it, displayMode) || it.jp_kana;
   };
 
@@ -341,19 +344,46 @@ function buildAndShowChoices(_correctAnswer, q) {
     ? (getConjugated(q.item, q.form, displayMode) || getConjugated(q.item, q.form, "kana"))
     : (getJP(q.item, displayMode) || q.item.jp_kana);
 
+  const seen = new Set([normalizeAnswer(correct)]);
   const distractors = [];
-  const shuffled = shuffle(allItems.slice());
-  for (const it of shuffled) {
+
+  const tryAddDistractor = (candidate) => {
+    if (!candidate) return;
+    const key = normalizeAnswer(candidate);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    distractors.push(candidate);
+  };
+
+  // 1) Hard distractors: same word, wrong form (only for dictionary -> conjugation).
+  if (q.direction === "dict_to_conj") {
+    for (const form of shuffle(formsForType.filter(f => f !== q.form))) {
+      tryAddDistractor(makeAnswerFor(q.item, form));
+      if (distractors.length >= 3) break;
+    }
+  }
+
+  // 2) Same-form distractors from other words of the same part of speech.
+  for (const it of shuffle(allItems.slice())) {
     if (it.id === q.item.id) continue;
-    const ans = makeAnswerFor(it);
-    if (!ans) continue;
-    if (normalizeAnswer(ans) === normalizeAnswer(correct)) continue;
-    if (distractors.some(x => normalizeAnswer(x) === normalizeAnswer(ans))) continue;
-    distractors.push(ans);
+    tryAddDistractor(makeAnswerFor(it, q.form));
     if (distractors.length >= 3) break;
   }
 
-  const options = shuffle([correct, ...distractors].slice(0,4));
+  // 3) Fallback pool: any allowed form from other words (avoids repeated options).
+  if (distractors.length < 3 && q.direction === "dict_to_conj") {
+    const extraPairs = [];
+    for (const it of allItems) {
+      if (it.id === q.item.id) continue;
+      for (const form of formsForType) extraPairs.push([it, form]);
+    }
+    for (const [it, form] of shuffle(extraPairs)) {
+      tryAddDistractor(makeAnswerFor(it, form));
+      if (distractors.length >= 3) break;
+    }
+  }
+
+  const options = shuffle([correct, ...distractors].slice(0, 4));
   session.lastChoices = options;
 
   const box = $("#choices");
