@@ -11,6 +11,11 @@ let adjs = [];
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+function applyMobileLayout() {
+  const isMobile = window.matchMedia("(max-width: 780px)").matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  document.body.classList.toggle("mobile", isMobile);
+}
+
 function showToast(message) {
   const el = document.createElement("div");
   el.className = "toast";
@@ -944,6 +949,9 @@ function initEvents() {
 }
 
 async function init() {
+  applyMobileLayout();
+  window.addEventListener("resize", applyMobileLayout);
+
   await fetchData();
   initEvents();
   applyWordTypeUI();
