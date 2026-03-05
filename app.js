@@ -55,6 +55,13 @@ function getJP(item, displayMode) {
 }
 
 function getConjugated(item, form, displayMode) {
+function getWordTypeHint(item) {
+  if (item.type === "adj") return item.class === "na" ? "(な)" : "(い)";
+  if (item.class === "ichidan") return "(Ichidan)";
+  if (item.class === "godan") return "(Godan)";
+  return "(Irregular)";
+}
+
   if (item.type === "verb") {
     const c = conjugateVerb(item, form);
     if (displayMode === "kanji" && c.kanji) return c.kanji;
@@ -138,6 +145,7 @@ function loadSettingsUI() {
   $("#setDewa").checked = settings.acceptDewaArimasen;
 }
 
+  $("#setWordTypeHint").checked = settings.showWordTypeHint;
 function saveSettingsFromUI() {
   settings.audioOn = $("#setAudioOn").checked;
   settings.autoplayAudio = $("#setAutoplay").checked;
@@ -149,6 +157,7 @@ function saveSettingsFromUI() {
   settings.showHint = $("#setShowHint").checked;
   settings.starredOnly = $("#setStarOnly").checked;
   settings.acceptDewaArimasen = $("#setDewa").checked;
+  settings.showWordTypeHint = $("#setWordTypeHint").checked;
   saveSettings(settings);
   loadDefaultsToStudyUI();
 }
@@ -257,7 +266,9 @@ function renderTypeQuestion() {
   $("#typeMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} type`;
   $("#typeBar").style.width = `${(n-1)/total*100}%`;
   $("#typePrompt").textContent = getJP(q.item, typeSession.setup.displayMode);
-  $("#typeSubPrompt").textContent = q.item.type === "verb" ? "Answer: Verb type" : "Answer: Adjective type";
+  const typePrompt = getJP(q.item, typeSession.setup.displayMode);
+  const typeHint = settings.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
+  $("#typePrompt").textContent = `${typePrompt}${typeHint}`;
   $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
 
   const englishLine = $("#typeEnglishPrompt");
@@ -510,7 +521,10 @@ function renderQuestion() {
   }
 }
 
-function buildAndShowChoices(_correctAnswer, q) {
+  const showHintTag = settings.showWordTypeHint && q.direction === "dict_to_conj";
+  const promptWithHint = showHintTag ? `${promptJP} ${getWordTypeHint(q.item)}` : promptJP;
+
+  $("#prompt").textContent = promptWithHint;
   const { displayMode } = session.setup;
   const allItems = (q.item.type === "verb") ? verbs : adjs;
   const formsForType = q.item.type === "verb"
@@ -899,7 +913,7 @@ function initEvents() {
     }
     if (e.key === "=") {
       e.preventDefault();
-      if (inConjQuiz) $("#btnReplay").click();
+  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa","setWordTypeHint"].forEach(id => {
       else if (inTypeQuiz) $("#btnTypeReplay").click();
     }
 

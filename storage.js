@@ -16,7 +16,8 @@ export function loadSettings() {
     showHint: true,
     starredOnly: false,
     questionCount: 20,
-    acceptDewaArimasen: false
+    acceptDewaArimasen: false,
+    showWordTypeHint: false
   };
   if (!raw) return defaults;
   try {
