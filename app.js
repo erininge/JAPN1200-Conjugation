@@ -382,7 +382,6 @@ function buildPool(setup) {
   for (const it of items) {
     const forms = (it.type === "verb") ? setup.verbForms : setup.adjForms;
     for (const form of forms) {
-      if (it.type === "adj" && form === "present") continue;
       tasks.push({ item: it, form });
     }
   }
@@ -433,7 +432,7 @@ function startSession(setup, forceStarred=false) {
 
 function describeFormBase(itemType, form) {
   const mapV = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
-  const mapA = { negative:"Negative", past:"Past", past_negative:"Past negative" };
+  const mapA = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
   return (itemType === "verb") ? mapV[form] : mapA[form];
 }
 
@@ -444,11 +443,11 @@ function describeFormHint(item, form) {
   }
 
   if (item.class === "i") {
-    const map = { negative:"(〜くないです)", past:"(〜かったです)", past_negative:"(〜くなかったです)" };
+    const map = { present:"(〜です)", negative:"(〜くないです)", past:"(〜かったです)", past_negative:"(〜くなかったです)" };
     return map[form] || "";
   }
 
-  const map = { negative:"(〜じゃないです)", past:"(〜でした)", past_negative:"(〜じゃなかったです)" };
+  const map = { present:"(〜です)", negative:"(〜じゃないです)", past:"(〜でした)", past_negative:"(〜じゃなかったです)" };
   return map[form] || "";
 }
 
@@ -516,7 +515,7 @@ function buildAndShowChoices(_correctAnswer, q) {
   const allItems = (q.item.type === "verb") ? verbs : adjs;
   const formsForType = q.item.type === "verb"
     ? ["present", "negative", "past", "past_negative"]
-    : ["negative", "past", "past_negative"];
+    : ["present", "negative", "past", "past_negative"];
 
   const makeAnswerFor = (it, form = q.form) => {
     if (q.direction === "dict_to_conj") return getConjugated(it, form, displayMode) || getConjugated(it, form, "kana");
@@ -768,7 +767,7 @@ function renderView() {
     const chips = document.createElement("div");
     chips.className = "chips";
 
-    const forms = (it.type === "verb") ? ["present","past","negative","past_negative"] : ["past","negative","past_negative"];
+    const forms = (it.type === "verb") ? ["present","past","negative","past_negative"] : ["present","past","negative","past_negative"];
 
     const out = document.createElement("div");
     out.className = "meta";
@@ -779,7 +778,7 @@ function renderView() {
       c.className = "chip";
       c.textContent = (it.type === "verb")
         ? ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg"}[form])
-        : ({past:"Past",negative:"Neg",past_negative:"PastNeg"}[form]);
+        : ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg"}[form]);
 
       c.addEventListener("click", () => {
         chips.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
