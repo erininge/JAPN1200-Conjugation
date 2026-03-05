@@ -15,7 +15,7 @@
       <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
       <div>
         <h1>JAPN1200 Conjugation</h1>
-        <div class="sub">v1.3.4</div>
+        <div class="sub">v1.3.5</div>
       </div>
     </div>
 
@@ -46,9 +46,9 @@
             <label style="flex:0; white-space:nowrap"><input type="radio" name="wordType" value="adjs"> Adjectives</label>
             <label style="flex:0; white-space:nowrap"><input type="radio" name="wordType" value="both"> Both</label>
           </div>
-        </div>
+          </div>
 
-        <div>
+          <div>
           <label>Question mode</label>
           <select id="questionMode">
             <option value="dict_to_conj">Dictionary → Conjugation</option>
@@ -100,10 +100,10 @@
             <option value="kana">Kana</option>
             <option value="kanji">Kanji</option>
           </select>
-        </div>
+          </div>
 
-        <div>
-          <label>Questions</label>
+          <div>
+            <label>Questions</label>
           <input type="number" id="questionCount" min="1" max="200" value="20"/>
         </div>
       </div>
@@ -112,6 +112,10 @@
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="starredOnly"> Starred only</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showEnglish"> Show English</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showHint"> Show hint</label>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showWordTypeHint"> Show word type</label>
       </div>
 
       <div class="btnrow">
@@ -203,10 +207,11 @@
     </section>
 
     <section id="tab-type" class="card hidden">
-      <h2 style="margin:0 0 10px">Type game setup</h2>
+      <div id="typeSetup">
+        <h2 style="margin:0 0 10px">Type game setup</h2>
 
-      <div class="row">
-        <div>
+        <div class="row">
+          <div>
           <label>Question set</label>
           <div class="row" style="margin-top:10px; gap:14px">
             <label style="flex:0; white-space:nowrap"><input type="radio" name="typeWordType" value="verbs" checked> Verbs</label>
@@ -221,24 +226,23 @@
             <option value="kana">Kana</option>
             <option value="kanji">Kanji</option>
           </select>
+          </div>
+
+          <div>
+            <label>Questions</label>
+            <input type="number" id="typeQuestionCount" min="1" max="200" value="20"/>
+          </div>
         </div>
 
-        <div>
-          <label>Questions</label>
-          <input type="number" id="typeQuestionCount" min="1" max="200" value="20"/>
+        <div class="row" style="margin-top:10px">
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeStarredOnly"> Starred only</label>
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeShowEnglish"> Show English</label>
+        </div>
+
+        <div class="btnrow">
+          <button class="primary" id="btnStartType">Start type game</button>
         </div>
       </div>
-
-      <div class="row" style="margin-top:10px">
-        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeStarredOnly"> Starred only</label>
-        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeShowEnglish"> Show English</label>
-      </div>
-
-      <div class="btnrow">
-        <button class="primary" id="btnStartType">Start type game</button>
-      </div>
-
-      <hr class="sep"/>
 
       <div id="typeGame" class="hidden">
         <div class="quizTop">
@@ -249,6 +253,7 @@
           <div class="row" style="justify-content:flex-end; flex:0">
             <button class="ghost" id="btnTypeReplay">= Audio</button>
             <button class="secondary starBtn" id="btnTypeStar" title="Toggle star (`)">☆</button>
+            <button class="ghost" id="btnTypeExit">Exit</button>
           </div>
         </div>
 
@@ -315,10 +320,6 @@
       <hr class="sep"/>
 
       <h3 style="margin:0 0 8px">Grammar style</h3>
-      <label style="display:block; margin-top:8px">
-        <input type="checkbox" id="setWordTypeHint">
-        Show word-type hint next to prompts (e.g., い/な, Ichidan/Godan/Irregular)
-      </label>
       <label style="display:block; margin-top:8px">
         <input type="checkbox" id="setDewa">
         Accept ではありません-style (also accept ではありません / ではありませんでした for な-adjectives)

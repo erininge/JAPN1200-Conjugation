@@ -36,6 +36,10 @@ function setTab(name) {
   $("#tab-stats").classList.toggle("hidden", name !== "stats");
   $("#tab-settings").classList.toggle("hidden", name !== "settings");
   $("#tab-quiz").classList.add("hidden");
+  if (name !== "type") {
+    $("#typeSetup").classList.remove("hidden");
+    $("#typeGame").classList.add("hidden");
+  }
 }
 
 function showQuiz() {
@@ -130,6 +134,7 @@ function loadDefaultsToStudyUI() {
   $("#starredOnly").checked = settings.starredOnly;
   $("#showEnglish").checked = settings.showEnglish;
   $("#showHint").checked = settings.showHint;
+  $("#showWordTypeHint").checked = settings.showWordTypeHint;
 
   $("#typeDisplayMode").value = settings.displayMode;
   $("#typeQuestionCount").value = settings.questionCount;
@@ -148,7 +153,6 @@ function loadSettingsUI() {
   $("#setShowHint").checked = settings.showHint;
   $("#setStarOnly").checked = settings.starredOnly;
   $("#setDewa").checked = settings.acceptDewaArimasen;
-  $("#setWordTypeHint").checked = settings.showWordTypeHint;
 }
 
 function saveSettingsFromUI() {
@@ -162,7 +166,6 @@ function saveSettingsFromUI() {
   settings.showHint = $("#setShowHint").checked;
   settings.starredOnly = $("#setStarOnly").checked;
   settings.acceptDewaArimasen = $("#setDewa").checked;
-  settings.showWordTypeHint = $("#setWordTypeHint").checked;
   saveSettings(settings);
   loadDefaultsToStudyUI();
 }
@@ -222,7 +225,8 @@ function readTypeSetup() {
     displayMode: $("#typeDisplayMode").value,
     questionCount: Number($("#typeQuestionCount").value || 20),
     starredOnly: $("#typeStarredOnly").checked,
-    showEnglish: $("#typeShowEnglish").checked
+    showEnglish: $("#typeShowEnglish").checked,
+    showWordTypeHint: $("#showWordTypeHint").checked
   };
 }
 
@@ -247,6 +251,7 @@ function startTypeSession(setup) {
   for (let i=0;i<setup.questionCount;i++) questions.push({ item: randPick(pool), answered:false, correct:false });
 
   typeSession = { setup, idx:0, questions, awaitingNext:false, lastChoices:[] };
+  $("#typeSetup").classList.add("hidden");
   $("#typeGame").classList.remove("hidden");
   renderTypeQuestion();
 }
@@ -272,7 +277,7 @@ function renderTypeQuestion() {
   $("#typeBar").style.width = `${(n-1)/total*100}%`;
   $("#typePrompt").textContent = getJP(q.item, typeSession.setup.displayMode);
   const typePrompt = getJP(q.item, typeSession.setup.displayMode);
-  const typeHint = settings.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
+  const typeHint = typeSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
   $("#typePrompt").textContent = `${typePrompt}${typeHint}`;
   $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
 
@@ -362,6 +367,7 @@ function nextTypeQuestionOrFinish() {
     renderStats();
     typeSession = null;
     $("#typeGame").classList.add("hidden");
+    $("#typeSetup").classList.remove("hidden");
     return;
   }
   typeSession.idx += 1;
@@ -839,10 +845,20 @@ function initEvents() {
 
   $$("input[name='wordType']").forEach(r => r.addEventListener("change", applyWordTypeUI));
 
+  $("#showWordTypeHint").addEventListener("change", () => {
+    settings.showWordTypeHint = $("#showWordTypeHint").checked;
+    saveSettings(settings);
+  });
+
   $("#btnStart").addEventListener("click", () => startSession(readStudySetup(), false));
   $("#btnPracticeStar").addEventListener("click", () => startSession(readStudySetup(), true));
   $("#btnStartType").addEventListener("click", () => startTypeSession(readTypeSetup()));
   $("#btnTypeNext").addEventListener("click", nextTypeQuestionOrFinish);
+  $("#btnTypeExit").addEventListener("click", () => {
+    typeSession = null;
+    $("#typeGame").classList.add("hidden");
+    $("#typeSetup").classList.remove("hidden");
+  });
 
   $("#btnSubmit").addEventListener("click", () => checkAnswer($("#answerInput").value));
   $("#btnNext").addEventListener("click", nextQuestionOrFinish);
@@ -885,7 +901,7 @@ function initEvents() {
     renderView();
   });
 
-  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa","setWordTypeHint"].forEach(id => {
+  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa"].forEach(id => {
     $("#"+id).addEventListener("change", saveSettingsFromUI);
   });
 
