@@ -59,7 +59,6 @@ function getJP(item, displayMode) {
   return item.jp_kana;
 }
 
-function getConjugated(item, form, displayMode) {
 function getWordTypeHint(item) {
   if (item.type === "adj") return item.class === "na" ? "(な)" : "(い)";
   if (item.class === "ichidan") return "(Ichidan)";
@@ -67,6 +66,7 @@ function getWordTypeHint(item) {
   return "(Irregular)";
 }
 
+function getConjugated(item, form, displayMode) {
   if (item.type === "verb") {
     const c = conjugateVerb(item, form);
     if (displayMode === "kanji" && c.kanji) return c.kanji;
@@ -148,9 +148,9 @@ function loadSettingsUI() {
   $("#setShowHint").checked = settings.showHint;
   $("#setStarOnly").checked = settings.starredOnly;
   $("#setDewa").checked = settings.acceptDewaArimasen;
+  $("#setWordTypeHint").checked = settings.showWordTypeHint;
 }
 
-  $("#setWordTypeHint").checked = settings.showWordTypeHint;
 function saveSettingsFromUI() {
   settings.audioOn = $("#setAudioOn").checked;
   settings.autoplayAudio = $("#setAutoplay").checked;
@@ -495,7 +495,9 @@ function renderQuestion() {
     answerLabel = "Answer: Dictionary";
   }
 
-  $("#prompt").textContent = promptJP;
+  const showHintTag = settings.showWordTypeHint && q.direction === "dict_to_conj";
+  const promptWithHint = showHintTag ? `${promptJP} ${getWordTypeHint(q.item)}` : promptJP;
+  $("#prompt").textContent = promptWithHint;
   $("#subPrompt").textContent = answerLabel;
 
   const englishLine = $("#englishPrompt");
@@ -526,10 +528,7 @@ function renderQuestion() {
   }
 }
 
-  const showHintTag = settings.showWordTypeHint && q.direction === "dict_to_conj";
-  const promptWithHint = showHintTag ? `${promptJP} ${getWordTypeHint(q.item)}` : promptJP;
-
-  $("#prompt").textContent = promptWithHint;
+function buildAndShowChoices(_correctAnswer, q) {
   const { displayMode } = session.setup;
   const allItems = (q.item.type === "verb") ? verbs : adjs;
   const formsForType = q.item.type === "verb"
@@ -886,7 +885,7 @@ function initEvents() {
     renderView();
   });
 
-  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa"].forEach(id => {
+  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa","setWordTypeHint"].forEach(id => {
     $("#"+id).addEventListener("change", saveSettingsFromUI);
   });
 
@@ -918,7 +917,7 @@ function initEvents() {
     }
     if (e.key === "=") {
       e.preventDefault();
-  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa","setWordTypeHint"].forEach(id => {
+      if (inConjQuiz) $("#btnReplay").click();
       else if (inTypeQuiz) $("#btnTypeReplay").click();
     }
 
