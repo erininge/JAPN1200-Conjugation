@@ -76,11 +76,13 @@ export function conjugateAdj(item, form) {
       return replaceOkurigana(kanji, kana, "");
     })();
 
+    if (form === "present") return { kana: kana + "です", kanji: kanji ? kanji + "です" : "" };
     if (form === "negative") return { kana: baseKana + "くないです", kanji: baseKanji ? baseKanji + "くないです" : "" };
     if (form === "past") return { kana: baseKana + "かったです", kanji: baseKanji ? baseKanji + "かったです" : "" };
     if (form === "past_negative") return { kana: baseKana + "くなかったです", kanji: baseKanji ? baseKanji + "くなかったです" : "" };
     throw new Error("Unknown i-adj form: " + form);
   } else {
+    if (form === "present") return { kana: kana + "です", kanji: kanji ? kanji + "です" : "" };
     if (form === "negative") return { kana: kana + "じゃないです", kanji: kanji ? kanji + "じゃないです" : "" };
     if (form === "past") return { kana: kana + "でした", kanji: kanji ? kanji + "でした" : "" };
     if (form === "past_negative") return { kana: kana + "じゃなかったです", kanji: kanji ? kanji + "じゃなかったです" : "" };

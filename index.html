@@ -74,6 +74,7 @@
         <div id="adjFormsBox" class="hidden">
           <label>Adjectives: which forms?</label>
           <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="present" checked> Present (です)</label>
             <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="negative" checked> Negative</label>
             <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="past" checked> Past</label>
             <label style="flex:0; white-space:nowrap"><input type="checkbox" class="af" value="past_negative" checked> Past negative</label>
@@ -314,6 +315,10 @@
       <hr class="sep"/>
 
       <h3 style="margin:0 0 8px">Grammar style</h3>
+      <label style="display:block; margin-top:8px">
+        <input type="checkbox" id="setWordTypeHint">
+        Show word-type hint next to prompts (e.g., い/な, Ichidan/Godan/Irregular)
+      </label>
       <label style="display:block; margin-top:8px">
         <input type="checkbox" id="setDewa">
         Accept ではありません-style (also accept ではありません / ではありませんでした for な-adjectives)
