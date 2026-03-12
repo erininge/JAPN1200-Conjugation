@@ -80,6 +80,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @media (max-width: 780px) {
+  select,input[type="number"],input[type="text"]{font-size:16px}
   header{padding:14px 12px 6px}
   main{padding:10px 12px 24px}
   .brand h1{font-size:18px}
