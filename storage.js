@@ -1,6 +1,7 @@
 const STORAGE_KEYS = {
   SETTINGS: "j1200c_settings_v1",
   STARS: "j1200c_stars_v1",
+  CLASS_MARKS: "j1200c_class_marks_v1",
   STATS: "j1200c_stats_v1"
 };
 
@@ -15,6 +16,7 @@ export function loadSettings() {
     showEnglish: false,
     showHint: true,
     starredOnly: false,
+    classOnly: false,
     questionCount: 20,
     acceptDewaArimasen: false,
     showWordTypeHint: false
@@ -39,6 +41,16 @@ export function loadStars() {
 
 export function saveStars(stars) {
   localStorage.setItem(STORAGE_KEYS.STARS, JSON.stringify(stars));
+}
+
+export function loadClassMarks() {
+  const raw = localStorage.getItem(STORAGE_KEYS.CLASS_MARKS);
+  if (!raw) return {};
+  try { return JSON.parse(raw) || {}; } catch { return {}; }
+}
+
+export function saveClassMarks(classMarks) {
+  localStorage.setItem(STORAGE_KEYS.CLASS_MARKS, JSON.stringify(classMarks));
 }
 
 export function loadStats() {

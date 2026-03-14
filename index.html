@@ -15,7 +15,7 @@
       <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
       <div>
         <h1>JAPN1200 Conjugation</h1>
-        <div class="sub">v1.3.6</div>
+        <div class="sub">v1.4.0</div>
       </div>
     </div>
 
@@ -23,6 +23,7 @@
       <div class="pill" id="pillTotal">Verbs: —</div>
       <div class="pill" id="pillAdj">Adjectives: —</div>
       <div class="pill" id="pillStars">⭐ —</div>
+      <div class="pill" id="pillClass">📘 —</div>
     </div>
 
     <div class="tabs">
@@ -110,6 +111,7 @@
 
       <div class="row" style="margin-top:10px">
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="starredOnly"> Starred only</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="classOnly"> Class only</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showEnglish"> Show English</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="showHint"> Show hint</label>
       </div>
@@ -121,9 +123,10 @@
       <div class="btnrow">
         <button class="primary" id="btnStart">Start</button>
         <button class="secondary" id="btnPracticeStar">Practice ⭐</button>
+        <button class="secondary" id="btnPracticeClass">Practice 📘</button>
       </div>
 
-      <small class="help">Shortcuts: Enter submit/next • 1–4 pick choice • ` star • = replay audio • / focus input</small>
+      <small class="help">Shortcuts: Enter submit/next • 1–4 pick choice • ` star • c class • = replay audio • / focus input</small>
     </section>
 
     <section id="tab-quiz" class="card hidden">
@@ -135,6 +138,7 @@
         <div class="row" style="justify-content:flex-end; flex:0">
           <button class="ghost" id="btnReplay">= Audio</button>
           <button class="secondary starBtn" id="btnStar" title="Toggle star (`)">☆</button>
+          <button class="secondary starBtn" id="btnClass" title="Toggle class mark (c)">📗</button>
           <button class="ghost" id="btnExit">Exit</button>
         </div>
       </div>
@@ -169,6 +173,17 @@
           </select>
         </div>
         <div>
+          <label>Subtype</label>
+          <select id="viewWordClass">
+            <option value="all">All</option>
+            <option value="godan">Godan (verbs)</option>
+            <option value="ichidan">Ichidan (verbs)</option>
+            <option value="irregular">Irregular (verbs)</option>
+            <option value="i">い-adjective</option>
+            <option value="na">な-adjective</option>
+          </select>
+        </div>
+        <div>
           <label>Display</label>
           <select id="viewDisplay">
             <option value="kana">Kana</option>
@@ -187,6 +202,7 @@
 
       <div class="row" style="margin-top:10px">
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="viewStarOnly"> Starred only</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="viewClassOnly"> Class only</label>
         <button class="secondary" id="btnViewReset" style="flex:0">Reset</button>
         <input type="text" id="viewSearch" placeholder="Search kana / kanji / English…">
       </div>
@@ -196,7 +212,7 @@
       <table class="table" id="viewTable">
         <thead>
           <tr>
-            <th style="width:70px">⭐</th>
+            <th style="width:120px">⭐ / 📘</th>
             <th>JP</th>
             <th>Forms</th>
             <th style="width:260px">EN</th>
@@ -236,6 +252,7 @@
 
         <div class="row" style="margin-top:10px">
           <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeStarredOnly"> Starred only</label>
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeClassOnly"> Class only</label>
           <label style="flex:0; white-space:nowrap"><input type="checkbox" id="typeShowEnglish"> Show English</label>
         </div>
 
@@ -253,6 +270,7 @@
           <div class="row" style="justify-content:flex-end; flex:0">
             <button class="ghost" id="btnTypeReplay">= Audio</button>
             <button class="secondary starBtn" id="btnTypeStar" title="Toggle star (`)">☆</button>
+            <button class="secondary starBtn" id="btnTypeClass" title="Toggle class mark (c)">📗</button>
             <button class="ghost" id="btnTypeExit">Exit</button>
           </div>
         </div>
@@ -315,6 +333,7 @@
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setShowEnglish"> Show English (default)</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setShowHint"> Show hint (default)</label>
         <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setStarOnly"> Starred only (default)</label>
+        <label style="flex:0; white-space:nowrap"><input type="checkbox" id="setClassOnly"> Class only (default)</label>
       </div>
 
       <hr class="sep"/>
@@ -336,6 +355,7 @@
       <div class="btnrow" style="margin-top:14px">
         <button class="secondary" id="btnAudioCheck">Audio self-check</button>
         <button class="secondary" id="btnResetStars">Reset stars</button>
+        <button class="secondary" id="btnResetClassMarks">Reset class marks</button>
       </div>
 
       <div id="audioStatus" class="meta" style="margin-top:10px"></div>
