@@ -1,8 +1,9 @@
-import { loadSettings, saveSettings, loadStars, saveStars, loadStats, saveStats } from "./storage.js";
+import { loadSettings, saveSettings, loadStars, saveStars, loadClassMarks, saveClassMarks, loadStats, saveStats } from "./storage.js";
 import { conjugateVerb, conjugateAdj, isAnswerCorrect, normalizeAnswer } from "./conjugationEngine.js";
 
 let settings = loadSettings();
 let stars = loadStars();
+let classMarks = loadClassMarks();
 let stats = loadStats();
 
 let verbs = [];
@@ -55,7 +56,9 @@ function updateTopPills() {
   $("#pillTotal").textContent = `Verbs: ${verbs.length}`;
   $("#pillAdj").textContent = `Adjectives: ${adjs.length}`;
   const starCount = Object.values(stars).filter(Boolean).length;
+  const classCount = Object.values(classMarks).filter(Boolean).length;
   $("#pillStars").textContent = `⭐ ${starCount}`;
+  $("#pillClass").textContent = `📘 ${classCount}`;
 }
 
 function getJP(item, displayMode) {
@@ -112,6 +115,13 @@ function toggleStar(id) {
   updateTopPills();
 }
 
+function isClassMarked(id) { return !!classMarks[id]; }
+function toggleClassMark(id) {
+  classMarks[id] = !classMarks[id];
+  saveClassMarks(classMarks);
+  updateTopPills();
+}
+
 function applyWordTypeUI() {
   const wt = $$("input[name='wordType']").find(r => r.checked)?.value || "verbs";
   const verbBox = $("#verbFormsBox");
@@ -132,6 +142,7 @@ function loadDefaultsToStudyUI() {
   $("#displayMode").value = settings.displayMode;
   $("#questionCount").value = settings.questionCount;
   $("#starredOnly").checked = settings.starredOnly;
+  $("#classOnly").checked = settings.classOnly;
   $("#showEnglish").checked = settings.showEnglish;
   $("#showHint").checked = settings.showHint;
   $("#showWordTypeHint").checked = settings.showWordTypeHint;
@@ -139,6 +150,7 @@ function loadDefaultsToStudyUI() {
   $("#typeDisplayMode").value = settings.displayMode;
   $("#typeQuestionCount").value = settings.questionCount;
   $("#typeStarredOnly").checked = settings.starredOnly;
+  $("#typeClassOnly").checked = settings.classOnly;
   $("#typeShowEnglish").checked = settings.showEnglish;
 }
 
@@ -152,6 +164,7 @@ function loadSettingsUI() {
   $("#setShowEnglish").checked = settings.showEnglish;
   $("#setShowHint").checked = settings.showHint;
   $("#setStarOnly").checked = settings.starredOnly;
+  $("#setClassOnly").checked = settings.classOnly;
   $("#setDewa").checked = settings.acceptDewaArimasen;
 }
 
@@ -165,6 +178,7 @@ function saveSettingsFromUI() {
   settings.showEnglish = $("#setShowEnglish").checked;
   settings.showHint = $("#setShowHint").checked;
   settings.starredOnly = $("#setStarOnly").checked;
+  settings.classOnly = $("#setClassOnly").checked;
   settings.acceptDewaArimasen = $("#setDewa").checked;
   saveSettings(settings);
   loadDefaultsToStudyUI();
@@ -210,6 +224,16 @@ async function fetchData() {
     }
   }
 
+  const allItems = verbs.concat(adjs);
+  let changed = false;
+  for (const it of allItems) {
+    if (it.list === "class" && !classMarks[it.id]) {
+      classMarks[it.id] = true;
+      changed = true;
+    }
+  }
+  if (changed) saveClassMarks(classMarks);
+
   updateTopPills();
 }
 
@@ -225,6 +249,7 @@ function readTypeSetup() {
     displayMode: $("#typeDisplayMode").value,
     questionCount: Number($("#typeQuestionCount").value || 20),
     starredOnly: $("#typeStarredOnly").checked,
+    classOnly: $("#typeClassOnly").checked,
     showEnglish: $("#typeShowEnglish").checked,
     showWordTypeHint: $("#showWordTypeHint").checked
   };
@@ -237,6 +262,7 @@ function buildTypePool(setup) {
   else items = verbs.concat(adjs);
 
   if (setup.starredOnly) items = items.filter(it => isStarred(it.id));
+  if (setup.classOnly) items = items.filter(it => isClassMarked(it.id));
   return items;
 }
 
@@ -280,6 +306,7 @@ function renderTypeQuestion() {
   const typeHint = typeSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
   $("#typePrompt").textContent = `${typePrompt}${typeHint}`;
   $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+  $("#btnTypeClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
 
   const englishLine = $("#typeEnglishPrompt");
   if (typeSession.setup.showEnglish && q.item.en) {
@@ -387,6 +414,7 @@ function readStudySetup() {
     displayMode: $("#displayMode").value,
     questionCount: Number($("#questionCount").value || 20),
     starredOnly: $("#starredOnly").checked,
+    classOnly: $("#classOnly").checked,
     showEnglish: $("#showEnglish").checked,
     showHint: $("#showHint").checked
   };
@@ -399,6 +427,7 @@ function buildPool(setup) {
   else items = verbs.concat(adjs);
 
   if (setup.starredOnly) items = items.filter(it => isStarred(it.id));
+  if (setup.classOnly) items = items.filter(it => isClassMarked(it.id));
 
   const tasks = [];
   for (const it of items) {
@@ -422,8 +451,9 @@ function randPick(arr) {
   return arr[Math.floor(Math.random()*arr.length)];
 }
 
-function startSession(setup, forceStarred=false) {
+function startSession(setup, forceStarred=false, forceClass=false) {
   if (forceStarred) setup.starredOnly = true;
+  if (forceClass) setup.classOnly = true;
   if ((setup.wt === "verbs" || setup.wt === "both") && setup.verbForms.length === 0) {
     alert("Pick at least one verb form.");
     return;
@@ -484,6 +514,7 @@ function renderQuestion() {
   $("#quizBar").style.width = `${(n-1)/total*100}%`;
 
   $("#btnStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+  $("#btnClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
 
   let promptJP = "";
   let expected = [];
@@ -743,15 +774,47 @@ function resetStats() {
   renderStats();
 }
 
+function updateViewWordClassOptions() {
+  const set = $("#viewSet").value;
+  const select = $("#viewWordClass");
+  const options = (set === "verbs")
+    ? [
+      { value: "all", label: "All verbs" },
+      { value: "godan", label: "Godan" },
+      { value: "ichidan", label: "Ichidan" },
+      { value: "irregular", label: "Irregular" }
+    ]
+    : [
+      { value: "all", label: "All adjectives" },
+      { value: "i", label: "い-adjective" },
+      { value: "na", label: "な-adjective" }
+    ];
+
+  const previous = select.value;
+  select.innerHTML = "";
+  for (const opt of options) {
+    const el = document.createElement("option");
+    el.value = opt.value;
+    el.textContent = opt.label;
+    select.appendChild(el);
+  }
+  const stillExists = options.some(opt => opt.value === previous);
+  select.value = stillExists ? previous : "all";
+}
+
 function renderView() {
   const set = $("#viewSet").value;
   const display = $("#viewDisplay").value;
   const starOnly = $("#viewStarOnly").checked;
+  const classOnly = $("#viewClassOnly").checked;
+  const wordClass = $("#viewWordClass").value;
   const sort = $("#viewSort").value;
   const q = ($("#viewSearch").value || "").trim().toLowerCase();
 
   let items = (set === "verbs") ? verbs.slice() : adjs.slice();
+  if (wordClass !== "all") items = items.filter(it => it.class === wordClass);
   if (starOnly) items = items.filter(it => isStarred(it.id));
+  if (classOnly) items = items.filter(it => isClassMarked(it.id));
 
   if (q) {
     items = items.filter(it => {
@@ -778,14 +841,25 @@ function renderView() {
     const b = document.createElement("button");
     b.className = "secondary starBtn";
     b.textContent = isStarred(it.id) ? "★" : "☆";
+    b.title = "Toggle star";
     b.addEventListener("click", () => {
       toggleStar(it.id);
       renderView();
     });
+    const cmark = document.createElement("button");
+    cmark.className = "secondary starBtn";
+    cmark.textContent = isClassMarked(it.id) ? "📘" : "📗";
+    cmark.title = "Toggle class word";
+    cmark.style.marginLeft = "6px";
+    cmark.addEventListener("click", () => {
+      toggleClassMark(it.id);
+      renderView();
+    });
     tdStar.appendChild(b);
+    tdStar.appendChild(cmark);
 
     const tdJP = document.createElement("td");
-    tdJP.innerHTML = `<div style='font-weight:700'>${getJP(it, display)}</div><div class='meta'>${it.type === "verb" ? "verb" : (it.class === "na" ? "な-adj" : "い-adj")}</div><div class='meta'>${getPrimaryAudioPath(it)}</div>`;
+    tdJP.innerHTML = `<div style='font-weight:700'>${getJP(it, display)}</div><div class='meta'>${it.type === "verb" ? `verb (${it.class})` : (it.class === "na" ? "な-adj" : "い-adj")}</div><div class='meta'>List: ${it.list === "class" ? "Class" : "Extra"}</div><div class='meta'>${getPrimaryAudioPath(it)}</div>`;
 
     const tdForms = document.createElement("td");
     const chips = document.createElement("div");
@@ -852,6 +926,7 @@ function initEvents() {
 
   $("#btnStart").addEventListener("click", () => startSession(readStudySetup(), false));
   $("#btnPracticeStar").addEventListener("click", () => startSession(readStudySetup(), true));
+  $("#btnPracticeClass").addEventListener("click", () => startSession(readStudySetup(), false, true));
   $("#btnStartType").addEventListener("click", () => startTypeSession(readTypeSetup()));
   $("#btnTypeNext").addEventListener("click", nextTypeQuestionOrFinish);
   $("#btnTypeExit").addEventListener("click", () => {
@@ -872,6 +947,13 @@ function initEvents() {
     $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
   });
 
+  $("#btnTypeClass").addEventListener("click", () => {
+    const q = typeSession?.questions?.[typeSession.idx];
+    if (!q) return;
+    toggleClassMark(q.item.id);
+    $("#btnTypeClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
+  });
+
   $("#btnTypeReplay").addEventListener("click", () => {
     showToast("Audio is not available at this time.");
   });
@@ -883,25 +965,40 @@ function initEvents() {
     $("#btnStar").textContent = isStarred(q.item.id) ? "★" : "☆";
   });
 
+  $("#btnClass").addEventListener("click", () => {
+    const q = session?.questions?.[session.idx];
+    if (!q) return;
+    toggleClassMark(q.item.id);
+    $("#btnClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
+  });
+
   $("#btnReplay").addEventListener("click", () => {
     showToast("Audio is not available at this time.");
   });
 
-  $("#viewSet").addEventListener("change", renderView);
+  $("#viewSet").addEventListener("change", () => {
+    updateViewWordClassOptions();
+    renderView();
+  });
   $("#viewDisplay").addEventListener("change", renderView);
   $("#viewSort").addEventListener("change", renderView);
+  $("#viewWordClass").addEventListener("change", renderView);
   $("#viewStarOnly").addEventListener("change", renderView);
+  $("#viewClassOnly").addEventListener("change", renderView);
   $("#viewSearch").addEventListener("input", renderView);
   $("#btnViewReset").addEventListener("click", () => {
     $("#viewSet").value = "verbs";
+    updateViewWordClassOptions();
     $("#viewDisplay").value = settings.displayMode;
     $("#viewSort").value = "default";
+    $("#viewWordClass").value = "all";
     $("#viewStarOnly").checked = false;
+    $("#viewClassOnly").checked = false;
     $("#viewSearch").value = "";
     renderView();
   });
 
-  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setDewa"].forEach(id => {
+  ["setAudioOn","setAutoplay","setSmart","setVol","setDisplay","setQCount","setShowEnglish","setShowHint","setStarOnly","setClassOnly","setDewa"].forEach(id => {
     $("#"+id).addEventListener("change", saveSettingsFromUI);
   });
 
@@ -909,6 +1006,14 @@ function initEvents() {
     if (!confirm("Reset all stars?")) return;
     stars = {};
     saveStars(stars);
+    updateTopPills();
+    renderView();
+  });
+
+  $("#btnResetClassMarks").addEventListener("click", () => {
+    if (!confirm("Reset all class marks?")) return;
+    classMarks = {};
+    saveClassMarks(classMarks);
     updateTopPills();
     renderView();
   });
@@ -930,6 +1035,11 @@ function initEvents() {
       e.preventDefault();
       if (inConjQuiz) $("#btnStar").click();
       else if (inTypeQuiz) $("#btnTypeStar").click();
+    }
+    if (e.key.toLowerCase() === "c") {
+      e.preventDefault();
+      if (inConjQuiz) $("#btnClass").click();
+      else if (inTypeQuiz) $("#btnTypeClass").click();
     }
     if (e.key === "=") {
       e.preventDefault();
@@ -975,6 +1085,7 @@ async function init() {
   renderStats();
 
   $("#viewDisplay").value = settings.displayMode;
+  updateViewWordClassOptions();
   renderView();
 
   if ("serviceWorker" in navigator) {
