@@ -239,6 +239,8 @@ async function fetchData() {
 
 let session = null;
 let typeSession = null;
+let swRegistration = null;
+let appRefreshInProgress = false;
 
 
 
@@ -253,6 +255,71 @@ function readTypeSetup() {
     showEnglish: $("#typeShowEnglish").checked,
     showWordTypeHint: $("#showWordTypeHint").checked
   };
+}
+
+function getWaitingWorker(reg) {
+  return reg?.waiting || null;
+}
+
+function promptUpdateReady() {
+  showToast("Update ready. Tap Refresh app.");
+}
+
+async function refreshAppNow() {
+  if (appRefreshInProgress) return;
+  appRefreshInProgress = true;
+  const btn = $("#btnRefreshApp");
+  if (btn) btn.disabled = true;
+  showToast("Checking for updates…");
+
+  try {
+    const reg = swRegistration || await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      window.location.reload();
+      return;
+    }
+
+    swRegistration = reg;
+    await reg.update();
+    const waiting = getWaitingWorker(reg);
+    if (waiting) {
+      waiting.postMessage({ type: "SKIP_WAITING" });
+      return;
+    }
+
+    // If no update is waiting, force a network reload for index.
+    window.location.reload();
+  } catch (e) {
+    console.warn("Refresh failed, reloading page instead.", e);
+    window.location.reload();
+  } finally {
+    setTimeout(() => {
+      appRefreshInProgress = false;
+      if (btn) btn.disabled = false;
+    }, 800);
+  }
+}
+
+function initRefreshButton() {
+  const btn = $("#btnRefreshApp");
+  if (!btn) return;
+  btn.addEventListener("click", refreshAppNow);
+}
+
+function watchServiceWorkerUpdates(reg) {
+  const attachInstallListener = (worker) => {
+    if (!worker) return;
+    worker.addEventListener("statechange", () => {
+      if (worker.state === "installed" && navigator.serviceWorker.controller) {
+        promptUpdateReady();
+      }
+    });
+  };
+
+  attachInstallListener(reg.installing);
+  reg.addEventListener("updatefound", () => attachInstallListener(reg.installing));
+
+  if (getWaitingWorker(reg)) promptUpdateReady();
 }
 
 function buildTypePool(setup) {
@@ -1087,9 +1154,17 @@ async function init() {
   $("#viewDisplay").value = settings.displayMode;
   updateViewWordClassOptions();
   renderView();
+  initRefreshButton();
 
   if ("serviceWorker" in navigator) {
-    try { await navigator.serviceWorker.register("./sw.js"); } catch {}
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      window.location.reload();
+    });
+    try {
+      swRegistration = await navigator.serviceWorker.register("./sw.js");
+      watchServiceWorkerUpdates(swRegistration);
+      setInterval(() => swRegistration?.update().catch(() => {}), 60 * 1000);
+    } catch {}
   }
 }
 
