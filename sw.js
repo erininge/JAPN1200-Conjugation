@@ -1,4 +1,4 @@
-const CACHE_NAME = "japn1200-conjugation-v13";
+const CACHE_NAME = "japn1200-conjugation-v14";
 const ASSETS = [
   "./",
   "./index.html",
@@ -29,10 +29,30 @@ self.addEventListener("activate", (event) => {
   })());
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   event.respondWith((async () => {
     const req = event.request;
     const cache = await caches.open(CACHE_NAME);
+
+    // Network-first for page navigations so users on iPhone home screen
+    // get new deployments without re-installing the shortcut.
+    if (req.mode === "navigate") {
+      try {
+        const fresh = await fetch(req);
+        if (fresh && fresh.status === 200) cache.put(req, fresh.clone());
+        return fresh;
+      } catch {
+        const cachedPage = await cache.match(req);
+        return cachedPage || cache.match("./index.html");
+      }
+    }
+
     const cached = await cache.match(req);
     if (cached) return cached;
     try {
