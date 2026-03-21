@@ -623,6 +623,7 @@ function renderQuestion() {
   const useTyping = (answerType === "typing" || answerType === "both");
   $("#typingBox").classList.toggle("hidden", !useTyping);
   $("#mcBox").classList.toggle("hidden", useTyping);
+  $("#btnSubmit").classList.toggle("hidden", !useTyping);
 
   $("#answerInput").value = "";
   $("#answerInput").focus();
