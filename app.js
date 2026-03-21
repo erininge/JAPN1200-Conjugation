@@ -8,7 +8,6 @@ let stats = loadStats();
 
 let verbs = [];
 let adjs = [];
-let toneLessons = [];
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -37,7 +36,6 @@ function setTab(name) {
   $("#tab-view").classList.toggle("hidden", name !== "view");
   $("#tab-stats").classList.toggle("hidden", name !== "stats");
   $("#tab-settings").classList.toggle("hidden", name !== "settings");
-  $("#tab-tone").classList.toggle("hidden", name !== "tone");
   $("#tab-quiz").classList.add("hidden");
   if (name !== "type") {
     $("#typeSetup").classList.remove("hidden");
@@ -205,29 +203,14 @@ async function fetchData() {
   try {
     const vUrl = new URL("./data/verbs.json", import.meta.url);
     const aUrl = new URL("./data/adjectives.json", import.meta.url);
-    const tUrl = new URL("./data/toneLessons.json", import.meta.url);
-    const [vRes, aRes, tRes] = await Promise.all([fetch(vUrl), fetch(aUrl), fetch(tUrl)]);
-    if (!vRes.ok || !aRes.ok || !tRes.ok) throw new Error("Fetch failed");
+    const [vRes, aRes] = await Promise.all([fetch(vUrl), fetch(aUrl)]);
+    if (!vRes.ok || !aRes.ok) throw new Error("Fetch failed");
     verbs = await vRes.json();
     adjs = await aRes.json();
-    toneLessons = await tRes.json();
   } catch (e) {
     // Fall back so the app still works locally.
     verbs = fallbackVerbs;
     adjs = fallbackAdjs;
-    toneLessons = [
-      {
-        id: "fallback-lesson",
-        title: "Fallback lesson — ma",
-        base: "ma",
-        items: [
-          { id: "fb_ma1", word: "mā", tone: 1, en: "mother", audio: "fb_ma1" },
-          { id: "fb_ma2", word: "má", tone: 2, en: "hemp", audio: "fb_ma2" },
-          { id: "fb_ma3", word: "mǎ", tone: 3, en: "horse", audio: "fb_ma3" },
-          { id: "fb_ma4", word: "mà", tone: 4, en: "to scold", audio: "fb_ma4" }
-        ]
-      }
-    ];
     console.warn("Could not load data via fetch(). Using fallback sample data. Deploy or run a local server to load your full lists.", e);
 
     const msg = document.createElement("div");
@@ -256,7 +239,6 @@ async function fetchData() {
 
 let session = null;
 let typeSession = null;
-let toneSession = null;
 let swRegistration = null;
 let appRefreshInProgress = false;
 
@@ -273,174 +255,6 @@ function readTypeSetup() {
     showEnglish: $("#typeShowEnglish").checked,
     showWordTypeHint: $("#showWordTypeHint").checked
   };
-}
-
-
-function populateToneLessonSelect() {
-  const select = $("#toneLesson");
-  if (!select) return;
-  select.innerHTML = "";
-
-  const allOpt = document.createElement("option");
-  allOpt.value = "all";
-  allOpt.textContent = "All lessons";
-  select.appendChild(allOpt);
-
-  toneLessons.forEach((lesson) => {
-    const opt = document.createElement("option");
-    opt.value = lesson.id;
-    opt.textContent = lesson.title || lesson.id;
-    select.appendChild(opt);
-  });
-}
-
-function readToneSetup() {
-  return {
-    lessonId: $("#toneLesson").value,
-    questionCount: Number($("#toneQuestionCount").value || 10),
-    showEnglish: $("#toneShowEnglishChoices").checked
-  };
-}
-
-function buildTonePool(setup) {
-  const lessons = setup.lessonId === "all"
-    ? toneLessons
-    : toneLessons.filter((lesson) => lesson.id === setup.lessonId);
-
-  return lessons.flatMap((lesson) => {
-    const choices = (lesson.items || []).map((item) => ({ ...item, lessonId: lesson.id, lessonTitle: lesson.title, base: lesson.base }));
-    return choices.map((target) => ({
-      lessonId: lesson.id,
-      lessonTitle: lesson.title,
-      base: lesson.base,
-      target,
-      choices
-    }));
-  });
-}
-
-function playToneAudio(entry) {
-  if (!entry || !settings.audioOn) return;
-  const exts = ["wav", "mp3", "m4a", "ogg"];
-  const audio = new Audio();
-  audio.volume = settings.volume;
-
-  const bases = [entry.audio, `tones/${entry.audio}`].filter(Boolean);
-  const paths = [];
-  for (const base of bases) {
-    for (const ext of exts) paths.push(`./audio/${base}.${ext}`);
-  }
-
-  let idx = 0;
-  const tryNext = () => {
-    if (idx >= paths.length) {
-      if ("speechSynthesis" in window) {
-        const u = new SpeechSynthesisUtterance(entry.word);
-        u.lang = "zh-CN";
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(u);
-      }
-      return;
-    }
-    audio.src = paths[idx++];
-    audio.play().catch(() => tryNext());
-  };
-
-  tryNext();
-}
-
-function startToneSession(setup) {
-  const pool = buildTonePool(setup);
-  if (pool.length === 0) {
-    alert("No tone lesson content matched your selection.");
-    return;
-  }
-
-  const targetCount = Math.min(setup.questionCount, pool.length);
-  const questions = shuffle(pool.slice()).slice(0, targetCount).map((q) => ({ ...q, answered: false, correct: false }));
-
-  toneSession = { setup, idx: 0, questions, awaitingNext: false };
-  $("#toneSetup").classList.add("hidden");
-  $("#toneGame").classList.remove("hidden");
-  renderToneQuestion();
-}
-
-function renderToneQuestion() {
-  const q = toneSession.questions[toneSession.idx];
-  const n = toneSession.idx + 1;
-  const total = toneSession.questions.length;
-
-  $("#toneMeta").textContent = `${n}/${total} • ${q.lessonTitle} (${q.base})`;
-  $("#toneBar").style.width = `${((n - 1) / total) * 100}%`;
-  $("#tonePrompt").textContent = "Listen and choose the correct tone word.";
-
-  const box = $("#toneChoices");
-  box.innerHTML = "";
-  const options = shuffle(q.choices.slice());
-  q.renderedChoices = options;
-
-  options.forEach((opt, i) => {
-    const div = document.createElement("div");
-    div.className = "choice";
-    div.dataset.index = String(i);
-    const english = toneSession.setup.showEnglish ? `<small class=\"meta\">${opt.en}</small>` : "";
-    div.innerHTML = `<strong>${i + 1}</strong><span>${opt.word} ${english}</span>`;
-    div.addEventListener("click", () => chooseTone(i));
-    box.appendChild(div);
-  });
-
-  $("#toneFeedback").textContent = "";
-  $("#toneFeedback").className = "feedback";
-  $("#btnToneNext").classList.add("hidden");
-  toneSession.awaitingNext = false;
-
-  playToneAudio(q.target);
-}
-
-function chooseTone(index) {
-  if (!toneSession || toneSession.awaitingNext) return;
-  const q = toneSession.questions[toneSession.idx];
-  const selected = q.renderedChoices?.[index];
-  if (!selected) return;
-
-  const correct = selected.id === q.target.id;
-  q.answered = true;
-  q.correct = correct;
-
-  if (correct) {
-    $("#toneFeedback").textContent = "✓ Correct";
-    $("#toneFeedback").classList.add("good");
-  } else {
-    $("#toneFeedback").textContent = `✗ Not quite. Correct: ${q.target.word} (${q.target.en})`;
-    $("#toneFeedback").classList.add("bad");
-  }
-
-  toneSession.awaitingNext = true;
-  $("#btnToneNext").classList.remove("hidden");
-  $("#toneBar").style.width = `${((toneSession.idx + 1) / toneSession.questions.length) * 100}%`;
-
-  const nodes = $$("#toneChoices .choice");
-  nodes.forEach((n, idx) => {
-    n.classList.remove("correct", "wrong");
-    const opt = q.renderedChoices[idx];
-    if (!opt) return;
-    if (opt.id === q.target.id) n.classList.add("correct");
-    if (idx === index && opt.id !== q.target.id) n.classList.add("wrong");
-  });
-}
-
-function nextToneQuestionOrFinish() {
-  if (!toneSession) return;
-  if (toneSession.idx >= toneSession.questions.length - 1) {
-    toneSession = null;
-    $("#toneGame").classList.add("hidden");
-    $("#toneSetup").classList.remove("hidden");
-    showToast("Tone listening lesson complete.");
-    return;
-  }
-
-  toneSession.idx += 1;
-  renderToneQuestion();
 }
 
 function getWaitingWorker(reg) {
@@ -1188,18 +1002,6 @@ function initEvents() {
   $("#btnPracticeStar").addEventListener("click", () => startSession(readStudySetup(), true));
   $("#btnPracticeClass").addEventListener("click", () => startSession(readStudySetup(), false, true));
   $("#btnStartType").addEventListener("click", () => startTypeSession(readTypeSetup()));
-  $("#btnStartTone").addEventListener("click", () => startToneSession(readToneSetup()));
-  $("#btnToneNext").addEventListener("click", nextToneQuestionOrFinish);
-  $("#btnToneReplay").addEventListener("click", () => {
-    const q = toneSession?.questions?.[toneSession.idx];
-    if (!q) return;
-    playToneAudio(q.target);
-  });
-  $("#btnToneExit").addEventListener("click", () => {
-    toneSession = null;
-    $("#toneGame").classList.add("hidden");
-    $("#toneSetup").classList.remove("hidden");
-  });
   $("#btnTypeNext").addEventListener("click", nextTypeQuestionOrFinish);
   $("#btnTypeExit").addEventListener("click", () => {
     typeSession = null;
@@ -1300,8 +1102,7 @@ function initEvents() {
   window.addEventListener("keydown", (e) => {
     const inConjQuiz = !$("#tab-quiz").classList.contains("hidden");
     const inTypeQuiz = !$("#tab-type").classList.contains("hidden") && !$("#typeGame").classList.contains("hidden");
-    const inToneQuiz = !$("#tab-tone").classList.contains("hidden") && !$("#toneGame").classList.contains("hidden");
-    if (!inConjQuiz && !inTypeQuiz && !inToneQuiz) return;
+    if (!inConjQuiz && !inTypeQuiz) return;
 
     if (e.key === "/" && inConjQuiz) { e.preventDefault(); $("#answerInput").focus(); }
     if (e.key === "`") {
@@ -1318,7 +1119,6 @@ function initEvents() {
       e.preventDefault();
       if (inConjQuiz) $("#btnReplay").click();
       else if (inTypeQuiz) $("#btnTypeReplay").click();
-      else if (inToneQuiz) $("#btnToneReplay").click();
     }
 
     if (e.key === "Enter") {
@@ -1333,20 +1133,15 @@ function initEvents() {
       } else if (inTypeQuiz) {
         if (!typeSession) return;
         if (typeSession.awaitingNext) $("#btnTypeNext").click();
-      } else if (inToneQuiz) {
-        if (!toneSession) return;
-        if (toneSession.awaitingNext) $("#btnToneNext").click();
       }
     }
 
-    if (["1","2","3","4","5"].includes(e.key)) {
+    if (["1","2","3","4"].includes(e.key)) {
       if (inConjQuiz) {
         if (session?.setup?.answerType !== "mc") return;
         onChooseMC(Number(e.key) - 1);
       } else if (inTypeQuiz) {
         onChooseType(Number(e.key) - 1);
-      } else if (inToneQuiz) {
-        chooseTone(Number(e.key) - 1);
       }
     }
   });
@@ -1357,7 +1152,6 @@ async function init() {
   window.addEventListener("resize", applyMobileLayout);
 
   await fetchData();
-  populateToneLessonSelect();
   initEvents();
   applyWordTypeUI();
   loadDefaultsToStudyUI();
