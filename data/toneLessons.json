@@ -1,0 +1,62 @@
+[
+  {
+    "id": "lesson1",
+    "title": "Lesson 1 — ma",
+    "base": "ma",
+    "items": [
+      { "id": "l1_ma1", "word": "mā", "tone": 1, "en": "mother", "audio": "l1_ma1" },
+      { "id": "l1_ma2", "word": "má", "tone": 2, "en": "hemp", "audio": "l1_ma2" },
+      { "id": "l1_ma3", "word": "mǎ", "tone": 3, "en": "horse", "audio": "l1_ma3" },
+      { "id": "l1_ma4", "word": "mà", "tone": 4, "en": "to scold", "audio": "l1_ma4" },
+      { "id": "l1_ma0", "word": "ma", "tone": 0, "en": "question particle", "audio": "l1_ma0" }
+    ]
+  },
+  {
+    "id": "lesson2",
+    "title": "Lesson 2 — shi",
+    "base": "shi",
+    "items": [
+      { "id": "l2_shi1", "word": "shī", "tone": 1, "en": "poem", "audio": "l2_shi1" },
+      { "id": "l2_shi2", "word": "shí", "tone": 2, "en": "ten", "audio": "l2_shi2" },
+      { "id": "l2_shi3", "word": "shǐ", "tone": 3, "en": "to begin", "audio": "l2_shi3" },
+      { "id": "l2_shi4", "word": "shì", "tone": 4, "en": "to be", "audio": "l2_shi4" },
+      { "id": "l2_shi0", "word": "shi", "tone": 0, "en": "clan suffix", "audio": "l2_shi0" }
+    ]
+  },
+  {
+    "id": "lesson3",
+    "title": "Lesson 3 — tang",
+    "base": "tang",
+    "items": [
+      { "id": "l3_tang1", "word": "tāng", "tone": 1, "en": "soup", "audio": "l3_tang1" },
+      { "id": "l3_tang2", "word": "táng", "tone": 2, "en": "sugar", "audio": "l3_tang2" },
+      { "id": "l3_tang3", "word": "tǎng", "tone": 3, "en": "to lie down", "audio": "l3_tang3" },
+      { "id": "l3_tang4", "word": "tàng", "tone": 4, "en": "to scald", "audio": "l3_tang4" },
+      { "id": "l3_tang0", "word": "tang", "tone": 0, "en": "sound effect (slap)", "audio": "l3_tang0" }
+    ]
+  },
+  {
+    "id": "lesson4",
+    "title": "Lesson 4 — jia",
+    "base": "jia",
+    "items": [
+      { "id": "l4_jia1", "word": "jiā", "tone": 1, "en": "home", "audio": "l4_jia1" },
+      { "id": "l4_jia2", "word": "jiá", "tone": 2, "en": "to clasp", "audio": "l4_jia2" },
+      { "id": "l4_jia3", "word": "jiǎ", "tone": 3, "en": "fake", "audio": "l4_jia3" },
+      { "id": "l4_jia4", "word": "jià", "tone": 4, "en": "price", "audio": "l4_jia4" },
+      { "id": "l4_jia0", "word": "jia", "tone": 0, "en": "syllable in names", "audio": "l4_jia0" }
+    ]
+  },
+  {
+    "id": "lesson5",
+    "title": "Lesson 5 — guan",
+    "base": "guan",
+    "items": [
+      { "id": "l5_guan1", "word": "guān", "tone": 1, "en": "to close", "audio": "l5_guan1" },
+      { "id": "l5_guan2", "word": "guán", "tone": 2, "en": "to string together", "audio": "l5_guan2" },
+      { "id": "l5_guan3", "word": "guǎn", "tone": 3, "en": "to manage", "audio": "l5_guan3" },
+      { "id": "l5_guan4", "word": "guàn", "tone": 4, "en": "to pour", "audio": "l5_guan4" },
+      { "id": "l5_guan0", "word": "guan", "tone": 0, "en": "syllable in compounds", "audio": "l5_guan0" }
+    ]
+  }
+]
