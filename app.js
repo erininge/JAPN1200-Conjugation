@@ -796,6 +796,22 @@ function nextQuestionOrFinish() {
   renderQuestion();
 }
 
+function handleConjSubmitOrNext() {
+  if (!session) return;
+  if (session.awaitingNext) {
+    nextQuestionOrFinish();
+    return;
+  }
+
+  if (session.setup.answerType === "mc") return;
+  checkAnswer($("#answerInput").value);
+}
+
+function handleTypeNextShortcut() {
+  if (!typeSession || !typeSession.awaitingNext) return;
+  nextTypeQuestionOrFinish();
+}
+
 function onChooseMC(i) {
   const opt = session.lastChoices?.[i];
   if (!opt) return;
@@ -1009,8 +1025,14 @@ function initEvents() {
     $("#typeSetup").classList.remove("hidden");
   });
 
-  $("#btnSubmit").addEventListener("click", () => checkAnswer($("#answerInput").value));
-  $("#btnNext").addEventListener("click", nextQuestionOrFinish);
+  $("#btnSubmit").addEventListener("click", (e) => {
+    e.preventDefault();
+    handleConjSubmitOrNext();
+  });
+  $("#btnNext").addEventListener("click", (e) => {
+    e.preventDefault();
+    handleConjSubmitOrNext();
+  });
 
   $("#btnExit").addEventListener("click", () => { session = null; setTab("study"); loadDefaultsToStudyUI(); });
 
@@ -1099,7 +1121,15 @@ function initEvents() {
 
   $("#btnAudioCheck").addEventListener("click", audioSelfCheck);
 
+  $("#answerInput").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.isComposing) return;
+    if (!session) return;
+    e.preventDefault();
+    handleConjSubmitOrNext();
+  });
+
   window.addEventListener("keydown", (e) => {
+    if (e.defaultPrevented || e.isComposing || e.altKey || e.ctrlKey || e.metaKey) return;
     const inConjQuiz = !$("#tab-quiz").classList.contains("hidden");
     const inTypeQuiz = !$("#tab-type").classList.contains("hidden") && !$("#typeGame").classList.contains("hidden");
     if (!inConjQuiz && !inTypeQuiz) return;
@@ -1124,15 +1154,9 @@ function initEvents() {
     if (e.key === "Enter") {
       e.preventDefault();
       if (inConjQuiz) {
-        if (!session) return;
-        if (session.awaitingNext) $("#btnNext").click();
-        else {
-          if (session.setup.answerType === "mc") return;
-          $("#btnSubmit").click();
-        }
+        handleConjSubmitOrNext();
       } else if (inTypeQuiz) {
-        if (!typeSession) return;
-        if (typeSession.awaitingNext) $("#btnTypeNext").click();
+        handleTypeNextShortcut();
       }
     }
 
