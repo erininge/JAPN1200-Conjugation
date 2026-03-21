@@ -46,5 +46,6 @@
   { "id": "verb_044", "jp_kana": "たのむ", "jp_kanji": "頼む", "en": "to request", "type": "verb", "class": "godan", "jlpt": "N4" },
   { "id": "verb_045", "jp_kana": "うける", "jp_kanji": "受ける", "en": "to receive; to take (a test)", "type": "verb", "class": "ichidan", "jlpt": "N4" },
   { "id": "verb_046", "jp_kana": "のる", "jp_kanji": "乗る", "en": "to ride; to board", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" },
-  { "id": "verb_047", "jp_kana": "でかける", "jp_kanji": "出かける", "en": "to go out (for fun)", "type": "verb", "class": "ichidan", "jlpt": "N5", "list": "class" }
+  { "id": "verb_047", "jp_kana": "でかける", "jp_kanji": "出かける", "en": "to go out (for fun)", "type": "verb", "class": "ichidan", "jlpt": "N5", "list": "class" },
+  { "id": "verb_048", "jp_kana": "やる", "jp_kanji": "", "en": "to do; to perform", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" }
 ]
