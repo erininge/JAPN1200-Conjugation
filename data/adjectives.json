@@ -367,5 +367,14 @@
     "type": "adj",
     "class": "na",
     "list": "extra"
+  },
+  {
+    "id": "adj_042",
+    "jp_kana": "だいじょうぶ",
+    "jp_kanji": "大丈夫",
+    "en": "okay; all right",
+    "type": "adj",
+    "class": "na",
+    "list": "class"
   }
 ]
