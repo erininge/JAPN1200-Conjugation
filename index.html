@@ -16,7 +16,7 @@
         <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
         <div>
           <h1>JAPN1200 Conjugation</h1>
-          <div class="sub">v1.6.0</div>
+          <div class="sub">v1.5.0</div>
         </div>
       </div>
       <button class="secondary refreshBtn" id="btnRefreshApp" title="Check for updates and reload">🔄 Refresh app</button>
@@ -32,7 +32,6 @@
     <div class="tabs">
       <button class="tabbtn active" data-tab="study">Conjugate</button>
       <button class="tabbtn" data-tab="type">Type</button>
-      <button class="tabbtn" data-tab="tone">Tone Listening</button>
       <button class="tabbtn" data-tab="view">View Vocab</button>
       <button class="tabbtn" data-tab="stats">Stats</button>
       <button class="tabbtn" data-tab="settings">Settings</button>
@@ -290,57 +289,6 @@
 
         <div class="btnrow">
           <button class="secondary hidden" id="btnTypeNext">Next</button>
-        </div>
-      </div>
-    </section>
-
-
-    <section id="tab-tone" class="card hidden">
-      <div id="toneSetup">
-        <h2 style="margin:0 0 10px">Tone listening setup</h2>
-
-        <div class="row">
-          <div>
-            <label>Lesson</label>
-            <select id="toneLesson">
-              <option value="all">All lessons</option>
-            </select>
-          </div>
-          <div>
-            <label>Questions</label>
-            <input type="number" id="toneQuestionCount" min="1" max="100" value="10"/>
-          </div>
-        </div>
-
-        <div class="row" style="margin-top:10px">
-          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="toneShowEnglishChoices" checked> Show English in choices</label>
-        </div>
-
-        <div class="btnrow">
-          <button class="primary" id="btnStartTone">Start tone listening</button>
-        </div>
-
-        <small class="help">This mode is listening-only. Audio loads from /audio using each lesson's tone IDs, then falls back to speech synthesis if files are missing.</small>
-      </div>
-
-      <div id="toneGame" class="hidden">
-        <div class="quizTop">
-          <div style="min-width:220px">
-            <div class="meta" id="toneMeta">—</div>
-            <div class="progress" style="margin-top:8px"><div id="toneBar"></div></div>
-          </div>
-          <div class="row" style="justify-content:flex-end; flex:0">
-            <button class="ghost" id="btnToneReplay">= Audio</button>
-            <button class="ghost" id="btnToneExit">Exit</button>
-          </div>
-        </div>
-
-        <div class="prompt" id="tonePrompt">Listen and choose the correct tone word.</div>
-        <div class="choiceGrid" id="toneChoices"></div>
-        <div class="feedback" id="toneFeedback"></div>
-
-        <div class="btnrow">
-          <button class="secondary hidden" id="btnToneNext">Next</button>
         </div>
       </div>
     </section>
