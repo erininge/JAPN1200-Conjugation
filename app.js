@@ -536,9 +536,15 @@ function startSession(setup, forceStarred=false, forceClass=false) {
     return;
   }
 
+  const maxUniqueQuestions = pool.length;
+  const targetQuestionCount = Math.min(setup.questionCount, maxUniqueQuestions);
+  if (setup.questionCount > maxUniqueQuestions) {
+    showToast(`Only ${maxUniqueQuestions} unique word+form questions available. Using ${maxUniqueQuestions}.`);
+  }
+
+  const uniqueTasks = shuffle(pool.slice()).slice(0, targetQuestionCount);
   const questions = [];
-  for (let i=0;i<setup.questionCount;i++){
-    const task = randPick(pool);
+  for (const task of uniqueTasks) {
     let direction = setup.questionMode;
     if (direction === "mixed") direction = (Math.random() < 0.5) ? "dict_to_conj" : "conj_to_dict";
     questions.push({ item: task.item, form: task.form, direction, answered:false, correct:false });

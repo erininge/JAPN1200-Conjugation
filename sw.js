@@ -1,4 +1,4 @@
-const CACHE_NAME = "japn1200-conjugation-v15";
+const CACHE_NAME = "japn1200-conjugation-v16";
 const ASSETS = [
   "./",
   "./index.html",
