@@ -1,9 +1,10 @@
-const CACHE_NAME = "japn1200-conjugation-v16";
+const CACHE_NAME = "japn1200-conjugation-v17";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./speechRecognition.js",
   "./conjugationEngine.js",
   "./storage.js",
   "./manifest.json",
