@@ -31,6 +31,7 @@
 
     <div class="tabs">
       <button class="tabbtn active" data-tab="study">Conjugate</button>
+      <button class="tabbtn" data-tab="speaking">Speaking</button>
       <button class="tabbtn" data-tab="type">Type</button>
       <button class="tabbtn" data-tab="view">View Vocab</button>
       <button class="tabbtn" data-tab="stats">Stats</button>
@@ -164,6 +165,120 @@
       </div>
 
       <div class="feedback" id="feedback"></div>
+    </section>
+
+    <section id="tab-speaking" class="card hidden">
+      <div id="speakingSetup">
+        <h2 style="margin:0 0 10px">Speaking setup</h2>
+
+        <div class="row">
+          <div>
+            <label>Word type</label>
+            <div class="row" style="margin-top:10px; gap:14px">
+              <label style="flex:0; white-space:nowrap"><input type="radio" name="speakingWordType" value="verbs" checked> Verbs</label>
+              <label style="flex:0; white-space:nowrap"><input type="radio" name="speakingWordType" value="adjs"> Adjectives</label>
+              <label style="flex:0; white-space:nowrap"><input type="radio" name="speakingWordType" value="both"> Both</label>
+            </div>
+          </div>
+
+          <div>
+            <label>Question type</label>
+            <select id="speakingQuestionType">
+              <option value="en_to_jp">en → jp</option>
+              <option value="jp_speaking">jp speaking practice</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="sep"/>
+
+        <div class="row">
+          <div id="speakingVerbFormsBox">
+            <label>Verbs: which forms?</label>
+            <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="present" checked> Present (ます)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="negative" checked> Negative (ません)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="past" checked> Past (ました)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="past_negative" checked> Past negative (ませんでした)</label>
+            </div>
+          </div>
+
+          <div id="speakingAdjFormsBox" class="hidden">
+            <label>Adjectives: which forms?</label>
+            <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="saf" value="present" checked> Present (です)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="saf" value="negative" checked> Negative</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="saf" value="past" checked> Past</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="saf" value="past_negative" checked> Past negative</label>
+            </div>
+          </div>
+        </div>
+
+        <hr class="sep"/>
+
+        <div class="row">
+          <div>
+            <label>Display mode</label>
+            <select id="speakingDisplayMode">
+              <option value="kana">Kana</option>
+              <option value="kanji">Kanji</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Questions</label>
+            <input type="number" id="speakingQuestionCount" min="1" max="200" value="20"/>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="speakingStarredOnly"> Starred only</label>
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="speakingClassOnly"> Class only</label>
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="speakingShowEnglish"> Show English</label>
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="speakingShowHint"> Show hint</label>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <label style="flex:0; white-space:nowrap"><input type="checkbox" id="speakingShowWordTypeHint"> Show word type</label>
+        </div>
+
+        <div id="speakingUnsupported" class="meta hidden" style="margin-top:12px">
+          ⚠️ Speaking mode needs browser speech recognition. Try Chrome, Edge, or another supported browser.
+        </div>
+
+        <div class="btnrow">
+          <button class="primary" id="btnStartSpeaking">Start speaking session</button>
+          <button class="secondary" id="btnSpeakingPracticeStar">Practice ⭐</button>
+          <button class="secondary" id="btnSpeakingPracticeClass">Practice 📘</button>
+        </div>
+      </div>
+
+      <div id="speakingGame" class="hidden">
+        <div class="quizTop">
+          <div style="min-width:220px">
+            <div class="meta" id="speakingMeta">—</div>
+            <div class="progress" style="margin-top:8px"><div id="speakingBar"></div></div>
+          </div>
+          <div class="row" style="justify-content:flex-end; flex:0">
+            <button class="primary" id="btnSpeakingListen">🎤 Speak</button>
+            <button class="secondary starBtn" id="btnSpeakingStar" title="Toggle star (`)">☆</button>
+            <button class="secondary starBtn" id="btnSpeakingClass" title="Toggle class mark (c)">📗</button>
+            <button class="ghost" id="btnSpeakingExit">Exit</button>
+          </div>
+        </div>
+
+        <div class="prompt" id="speakingPrompt">—</div>
+        <div class="meta enLine" id="speakingEnglishPrompt"></div>
+        <div class="answerMeta" id="speakingSubPrompt">Answer: —</div>
+        <div class="meta" id="speakingListenStatus">Tap 🎤 Speak to answer.</div>
+        <div class="meta" id="speakingHeard"></div>
+
+        <div class="btnrow">
+          <button class="secondary hidden" id="btnSpeakingNext">Next</button>
+        </div>
+
+        <div class="feedback" id="speakingFeedback"></div>
+      </div>
     </section>
 
     <section id="tab-view" class="card hidden">
