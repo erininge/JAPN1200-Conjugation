@@ -30,6 +30,20 @@ function showToast(message) {
   }, 1800);
 }
 
+function syncSpeakingPanels() {
+  const setup = $("#speakingSetup");
+  const game = $("#speakingGame");
+  if (!setup || !game) return;
+
+  const hasSpeakingSession = !!(speakingSession && speakingSession.questions?.length);
+  setup.classList.toggle("hidden", hasSpeakingSession);
+  game.classList.toggle("hidden", !hasSpeakingSession);
+
+  if (setup.classList.contains("hidden") && game.classList.contains("hidden")) {
+    setup.classList.remove("hidden");
+  }
+}
+
 function setTab(name) {
   $$(".tabbtn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   $("#tab-study").classList.toggle("hidden", name !== "study");
@@ -42,6 +56,9 @@ function setTab(name) {
   if (name !== "type") {
     $("#typeSetup").classList.remove("hidden");
     $("#typeGame").classList.add("hidden");
+  }
+  if (name === "speaking") {
+    syncSpeakingPanels();
   }
 }
 
@@ -1405,6 +1422,7 @@ async function init() {
   loadDefaultsToStudyUI();
   loadSettingsUI();
   $("#speakingUnsupported").classList.toggle("hidden", speechController.supported);
+  syncSpeakingPanels();
   renderStats();
 
   $("#viewDisplay").value = settings.displayMode;
