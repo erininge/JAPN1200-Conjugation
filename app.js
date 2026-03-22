@@ -798,6 +798,8 @@ function renderSpeakingQuestion() {
   $("#speakingFeedback").className = "feedback";
   $("#speakingHeard").textContent = "";
   $("#speakingListenStatus").textContent = "Tap 🎤 Speak to answer.";
+  $("#btnSpeakingListen").textContent = "🎤 Tap to speak";
+  $("#btnSpeakingListen").disabled = false;
   $("#btnSpeakingNext").classList.add("hidden");
   speakingSession.awaitingNext = false;
 }
@@ -985,18 +987,24 @@ async function runSpeechCapture() {
     return;
   }
 
-  $("#btnSpeakingListen").disabled = true;
+  if (speechController.isListening()) {
+    speechController.cancel();
+    $("#btnSpeakingListen").textContent = "🎤 Tap to speak";
+    $("#speakingListenStatus").textContent = "Listening stopped.";
+    return;
+  }
+
+  $("#btnSpeakingListen").textContent = "⏹ Stop listening";
   $("#speakingListenStatus").textContent = "Listening…";
   try {
-    const heard = await speechController.listen({ lang: "ja-JP" });
+    const heard = await speechController.listen({ lang: "ja-JP", maxAlternatives: 3, timeoutMs: 9000 });
     $("#speakingHeard").textContent = `Heard: ${heard || "(no speech detected)"}`;
     checkSpeakingAnswer(heard || "");
     $("#speakingListenStatus").textContent = "Done listening.";
   } catch (err) {
-    const reason = err?.message || "Could not capture speech.";
-    $("#speakingListenStatus").textContent = `Could not listen: ${reason}`;
+    $("#speakingListenStatus").textContent = err?.message || "Could not listen. Please try again.";
   } finally {
-    $("#btnSpeakingListen").disabled = false;
+    $("#btnSpeakingListen").textContent = "🎤 Tap to speak";
   }
 }
 
