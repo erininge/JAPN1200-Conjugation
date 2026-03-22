@@ -1,5 +1,6 @@
 import { loadSettings, saveSettings, loadStars, saveStars, loadClassMarks, saveClassMarks, loadStats, saveStats } from "./storage.js";
 import { conjugateVerb, conjugateAdj, isAnswerCorrect, normalizeAnswer } from "./conjugationEngine.js";
+import { createSpeechController } from "./speechRecognition.js";
 
 let settings = loadSettings();
 let stars = loadStars();
@@ -32,6 +33,7 @@ function showToast(message) {
 function setTab(name) {
   $$(".tabbtn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   $("#tab-study").classList.toggle("hidden", name !== "study");
+  $("#tab-speaking").classList.toggle("hidden", name !== "speaking");
   $("#tab-type").classList.toggle("hidden", name !== "type");
   $("#tab-view").classList.toggle("hidden", name !== "view");
   $("#tab-stats").classList.toggle("hidden", name !== "stats");
@@ -45,6 +47,7 @@ function setTab(name) {
 
 function showQuiz() {
   $("#tab-study").classList.add("hidden");
+  $("#tab-speaking").classList.add("hidden");
   $("#tab-type").classList.add("hidden");
   $("#tab-view").classList.add("hidden");
   $("#tab-stats").classList.add("hidden");
@@ -138,6 +141,22 @@ function applyWordTypeUI() {
   }
 }
 
+function applySpeakingWordTypeUI() {
+  const wt = $$("input[name='speakingWordType']").find(r => r.checked)?.value || "verbs";
+  const verbBox = $("#speakingVerbFormsBox");
+  const adjBox = $("#speakingAdjFormsBox");
+  if (wt === "verbs") {
+    verbBox.classList.remove("hidden");
+    adjBox.classList.add("hidden");
+  } else if (wt === "adjs") {
+    verbBox.classList.add("hidden");
+    adjBox.classList.remove("hidden");
+  } else {
+    verbBox.classList.remove("hidden");
+    adjBox.classList.remove("hidden");
+  }
+}
+
 function loadDefaultsToStudyUI() {
   $("#displayMode").value = settings.displayMode;
   $("#questionCount").value = settings.questionCount;
@@ -152,6 +171,14 @@ function loadDefaultsToStudyUI() {
   $("#typeStarredOnly").checked = settings.starredOnly;
   $("#typeClassOnly").checked = settings.classOnly;
   $("#typeShowEnglish").checked = settings.showEnglish;
+
+  $("#speakingDisplayMode").value = settings.displayMode;
+  $("#speakingQuestionCount").value = settings.questionCount;
+  $("#speakingStarredOnly").checked = settings.starredOnly;
+  $("#speakingClassOnly").checked = settings.classOnly;
+  $("#speakingShowEnglish").checked = settings.showEnglish;
+  $("#speakingShowHint").checked = settings.showHint;
+  $("#speakingShowWordTypeHint").checked = settings.showWordTypeHint;
 }
 
 function loadSettingsUI() {
@@ -239,6 +266,8 @@ async function fetchData() {
 
 let session = null;
 let typeSession = null;
+let speakingSession = null;
+const speechController = createSpeechController();
 let swRegistration = null;
 let appRefreshInProgress = false;
 
@@ -487,6 +516,26 @@ function readStudySetup() {
   };
 }
 
+function readSpeakingSetup() {
+  const wt = $$("input[name='speakingWordType']").find(r => r.checked)?.value || "verbs";
+  const verbForms = $$(".svf").filter(x => x.checked).map(x => x.value);
+  const adjForms = $$(".saf").filter(x => x.checked).map(x => x.value);
+  return {
+    wt,
+    verbForms,
+    adjForms,
+    questionType: $("#speakingQuestionType").value,
+    answerType: "speech",
+    displayMode: $("#speakingDisplayMode").value,
+    questionCount: Number($("#speakingQuestionCount").value || 20),
+    starredOnly: $("#speakingStarredOnly").checked,
+    classOnly: $("#speakingClassOnly").checked,
+    showEnglish: $("#speakingShowEnglish").checked,
+    showHint: $("#speakingShowHint").checked,
+    showWordTypeHint: $("#speakingShowWordTypeHint").checked
+  };
+}
+
 function buildPool(setup) {
   let items = [];
   if (setup.wt === "verbs") items = verbs.slice();
@@ -553,6 +602,49 @@ function startSession(setup, forceStarred=false, forceClass=false) {
   session = { setup, idx:0, questions, awaitingNext:false, lastChoices:null };
   showQuiz();
   renderQuestion();
+}
+
+function buildSpeakingQuestions(setup, tasks) {
+  const uniqueTasks = shuffle(tasks.slice()).slice(0, Math.min(setup.questionCount, tasks.length));
+  return uniqueTasks.map(task => ({
+    item: task.item,
+    form: task.form,
+    direction: setup.questionType,
+    answered: false,
+    correct: false,
+    heard: ""
+  }));
+}
+
+function startSpeakingSession(setup, forceStarred = false, forceClass = false) {
+  if (!speechController.supported) {
+    $("#speakingUnsupported").classList.remove("hidden");
+    return;
+  }
+  if (forceStarred) setup.starredOnly = true;
+  if (forceClass) setup.classOnly = true;
+  if ((setup.wt === "verbs" || setup.wt === "both") && setup.verbForms.length === 0) {
+    alert("Pick at least one verb form.");
+    return;
+  }
+  if ((setup.wt === "adjs" || setup.wt === "both") && setup.adjForms.length === 0) {
+    alert("Pick at least one adjective form.");
+    return;
+  }
+
+  const pool = buildPool(setup);
+  if (pool.length === 0) {
+    alert("No items matched your selection (try turning off Starred only or add words).");
+    return;
+  }
+  if (setup.questionCount > pool.length) {
+    showToast(`Only ${pool.length} unique word+form questions available. Using ${pool.length}.`);
+  }
+
+  speakingSession = { setup, idx: 0, questions: buildSpeakingQuestions(setup, pool), awaitingNext: false };
+  $("#speakingSetup").classList.add("hidden");
+  $("#speakingGame").classList.remove("hidden");
+  renderSpeakingQuestion();
 }
 
 function describeFormBase(itemType, form) {
@@ -637,6 +729,57 @@ function renderQuestion() {
   if (answerType === "mc") {
     buildAndShowChoices(expected[0], q);
   }
+}
+
+function getSpeakingExpectedAnswers(q) {
+  if (q.direction === "en_to_jp") return getExpectedAnswers(q.item, q.form);
+  const kana = getConjugated(q.item, q.form, "kana");
+  const kanji = getConjugated(q.item, q.form, "kanji");
+  return [kana, ...(kanji && kanji !== kana ? [kanji] : [])];
+}
+
+function renderSpeakingQuestion() {
+  const q = speakingSession.questions[speakingSession.idx];
+  const total = speakingSession.questions.length;
+  const n = speakingSession.idx + 1;
+  const modeLabel = q.direction === "en_to_jp" ? "en→jp" : "jp speaking";
+  $("#speakingMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} • ${modeLabel}`;
+  $("#speakingBar").style.width = `${(n - 1) / total * 100}%`;
+  $("#btnSpeakingStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+  $("#btnSpeakingClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
+
+  const promptJP = getConjugated(q.item, q.form, speakingSession.setup.displayMode);
+  if (q.direction === "en_to_jp") {
+    $("#speakingPrompt").textContent = q.item.en || "(No English gloss)";
+    const base = describeFormBase(q.item.type, q.form);
+    const hint = speakingSession.setup.showHint ? ` ${describeFormHint(q.item, q.form)}` : "";
+    $("#speakingSubPrompt").textContent = `Speak Japanese: ${base}${hint}`.trim();
+    if (speakingSession.setup.showEnglish) {
+      $("#speakingEnglishPrompt").textContent = `Expected concept: ${promptJP}`;
+      $("#speakingEnglishPrompt").classList.remove("hidden");
+    } else {
+      $("#speakingEnglishPrompt").textContent = "";
+      $("#speakingEnglishPrompt").classList.add("hidden");
+    }
+  } else {
+    const typeHint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
+    $("#speakingPrompt").textContent = `${promptJP}${typeHint}`;
+    $("#speakingSubPrompt").textContent = "Speak this Japanese naturally.";
+    if (speakingSession.setup.showEnglish && q.item.en) {
+      $("#speakingEnglishPrompt").textContent = q.item.en;
+      $("#speakingEnglishPrompt").classList.remove("hidden");
+    } else {
+      $("#speakingEnglishPrompt").textContent = "";
+      $("#speakingEnglishPrompt").classList.add("hidden");
+    }
+  }
+
+  $("#speakingFeedback").textContent = "";
+  $("#speakingFeedback").className = "feedback";
+  $("#speakingHeard").textContent = "";
+  $("#speakingListenStatus").textContent = "Tap 🎤 Speak to answer.";
+  $("#btnSpeakingNext").classList.add("hidden");
+  speakingSession.awaitingNext = false;
 }
 
 function buildAndShowChoices(_correctAnswer, q) {
@@ -784,6 +927,59 @@ function checkAnswer(userAnswer) {
   }
 }
 
+function checkSpeakingAnswer(userAnswer) {
+  const q = speakingSession.questions[speakingSession.idx];
+  if (speakingSession.awaitingNext) return;
+
+  const expected = getSpeakingExpectedAnswers(q);
+  const correct = isAnswerCorrect({
+    userAnswer,
+    expected,
+    itemType: q.item.type === "verb" ? "verb" : "adj",
+    form: q.form,
+    settings
+  });
+
+  q.answered = true;
+  q.correct = correct;
+  q.heard = userAnswer;
+  recordStats(q, correct);
+
+  if (correct) {
+    $("#speakingFeedback").textContent = "✓ Correct";
+    $("#speakingFeedback").classList.add("good");
+  } else {
+    $("#speakingFeedback").textContent = `✗ Not quite. Expected: ${expected[0]}`;
+    $("#speakingFeedback").classList.add("bad");
+  }
+
+  speakingSession.awaitingNext = true;
+  $("#btnSpeakingNext").classList.remove("hidden");
+  $("#speakingBar").style.width = `${(speakingSession.idx + 1) / speakingSession.questions.length * 100}%`;
+}
+
+async function runSpeechCapture() {
+  if (!speakingSession || speakingSession.awaitingNext) return;
+  if (!speechController.supported) {
+    $("#speakingListenStatus").textContent = "Speech recognition is not supported in this browser.";
+    return;
+  }
+
+  $("#btnSpeakingListen").disabled = true;
+  $("#speakingListenStatus").textContent = "Listening…";
+  try {
+    const heard = await speechController.listen({ lang: "ja-JP" });
+    $("#speakingHeard").textContent = `Heard: ${heard || "(no speech detected)"}`;
+    checkSpeakingAnswer(heard || "");
+    $("#speakingListenStatus").textContent = "Done listening.";
+  } catch (err) {
+    const reason = err?.message || "Could not capture speech.";
+    $("#speakingListenStatus").textContent = `Could not listen: ${reason}`;
+  } finally {
+    $("#btnSpeakingListen").disabled = false;
+  }
+}
+
 function nextQuestionOrFinish() {
   if (!session) return;
   if (session.idx >= session.questions.length - 1) {
@@ -794,6 +990,20 @@ function nextQuestionOrFinish() {
   }
   session.idx += 1;
   renderQuestion();
+}
+
+function nextSpeakingQuestionOrFinish() {
+  if (!speakingSession) return;
+  if (speakingSession.idx >= speakingSession.questions.length - 1) {
+    setTab("stats");
+    renderStats();
+    speakingSession = null;
+    $("#speakingGame").classList.add("hidden");
+    $("#speakingSetup").classList.remove("hidden");
+    return;
+  }
+  speakingSession.idx += 1;
+  renderSpeakingQuestion();
 }
 
 function onChooseMC(i) {
@@ -989,9 +1199,13 @@ function initEvents() {
     if (btn.dataset.tab === "view") renderView();
     if (btn.dataset.tab === "stats") renderStats();
     if (btn.dataset.tab === "settings") loadSettingsUI();
+    if (btn.dataset.tab === "speaking") {
+      $("#speakingUnsupported").classList.toggle("hidden", speechController.supported);
+    }
   }));
 
   $$("input[name='wordType']").forEach(r => r.addEventListener("change", applyWordTypeUI));
+  $$("input[name='speakingWordType']").forEach(r => r.addEventListener("change", applySpeakingWordTypeUI));
 
   $("#showWordTypeHint").addEventListener("change", () => {
     settings.showWordTypeHint = $("#showWordTypeHint").checked;
@@ -1007,6 +1221,18 @@ function initEvents() {
     typeSession = null;
     $("#typeGame").classList.add("hidden");
     $("#typeSetup").classList.remove("hidden");
+  });
+
+  $("#btnStartSpeaking").addEventListener("click", () => startSpeakingSession(readSpeakingSetup(), false));
+  $("#btnSpeakingPracticeStar").addEventListener("click", () => startSpeakingSession(readSpeakingSetup(), true));
+  $("#btnSpeakingPracticeClass").addEventListener("click", () => startSpeakingSession(readSpeakingSetup(), false, true));
+  $("#btnSpeakingListen").addEventListener("click", runSpeechCapture);
+  $("#btnSpeakingNext").addEventListener("click", nextSpeakingQuestionOrFinish);
+  $("#btnSpeakingExit").addEventListener("click", () => {
+    speakingSession = null;
+    speechController.cancel();
+    $("#speakingGame").classList.add("hidden");
+    $("#speakingSetup").classList.remove("hidden");
   });
 
   $("#btnSubmit").addEventListener("click", () => checkAnswer($("#answerInput").value));
@@ -1037,6 +1263,20 @@ function initEvents() {
     if (!q) return;
     toggleStar(q.item.id);
     $("#btnStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+  });
+
+  $("#btnSpeakingStar").addEventListener("click", () => {
+    const q = speakingSession?.questions?.[speakingSession.idx];
+    if (!q) return;
+    toggleStar(q.item.id);
+    $("#btnSpeakingStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+  });
+
+  $("#btnSpeakingClass").addEventListener("click", () => {
+    const q = speakingSession?.questions?.[speakingSession.idx];
+    if (!q) return;
+    toggleClassMark(q.item.id);
+    $("#btnSpeakingClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
   });
 
   $("#btnClass").addEventListener("click", () => {
@@ -1102,18 +1342,21 @@ function initEvents() {
   window.addEventListener("keydown", (e) => {
     const inConjQuiz = !$("#tab-quiz").classList.contains("hidden");
     const inTypeQuiz = !$("#tab-type").classList.contains("hidden") && !$("#typeGame").classList.contains("hidden");
-    if (!inConjQuiz && !inTypeQuiz) return;
+    const inSpeakingQuiz = !$("#tab-speaking").classList.contains("hidden") && !$("#speakingGame").classList.contains("hidden");
+    if (!inConjQuiz && !inTypeQuiz && !inSpeakingQuiz) return;
 
     if (e.key === "/" && inConjQuiz) { e.preventDefault(); $("#answerInput").focus(); }
     if (e.key === "`") {
       e.preventDefault();
       if (inConjQuiz) $("#btnStar").click();
       else if (inTypeQuiz) $("#btnTypeStar").click();
+      else if (inSpeakingQuiz) $("#btnSpeakingStar").click();
     }
     if (e.key.toLowerCase() === "c") {
       e.preventDefault();
       if (inConjQuiz) $("#btnClass").click();
       else if (inTypeQuiz) $("#btnTypeClass").click();
+      else if (inSpeakingQuiz) $("#btnSpeakingClass").click();
     }
     if (e.key === "=") {
       e.preventDefault();
@@ -1133,6 +1376,10 @@ function initEvents() {
       } else if (inTypeQuiz) {
         if (!typeSession) return;
         if (typeSession.awaitingNext) $("#btnTypeNext").click();
+      } else if (inSpeakingQuiz) {
+        if (!speakingSession) return;
+        if (speakingSession.awaitingNext) $("#btnSpeakingNext").click();
+        else $("#btnSpeakingListen").click();
       }
     }
 
@@ -1154,8 +1401,10 @@ async function init() {
   await fetchData();
   initEvents();
   applyWordTypeUI();
+  applySpeakingWordTypeUI();
   loadDefaultsToStudyUI();
   loadSettingsUI();
+  $("#speakingUnsupported").classList.toggle("hidden", speechController.supported);
   renderStats();
 
   $("#viewDisplay").value = settings.displayMode;
