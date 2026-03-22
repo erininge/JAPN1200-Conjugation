@@ -767,11 +767,11 @@ function renderSpeakingQuestion() {
 
   if (q.direction === "dict_to_conj") {
     const promptJP = getJP(q.item, speakingSession.setup.displayMode);
+    const base = describeFormBase(q.item.type, q.form).toLowerCase();
     const typeHint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
-    $("#speakingPrompt").textContent = `${promptJP}${typeHint}`;
-    const base = describeFormBase(q.item.type, q.form);
+    $("#speakingPrompt").textContent = `${promptJP} ${base}${typeHint}`.trim();
     const hint = speakingSession.setup.showHint ? ` ${describeFormHint(q.item, q.form)}` : "";
-    $("#speakingSubPrompt").textContent = `Speak: ${base}${hint}`.trim();
+    $("#speakingSubPrompt").textContent = `Speak the conjugated form${hint}`.trim();
     if (speakingSession.setup.showEnglish && q.item.en) {
       $("#speakingEnglishPrompt").textContent = q.item.en;
       $("#speakingEnglishPrompt").classList.remove("hidden");
