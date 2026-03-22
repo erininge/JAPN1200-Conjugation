@@ -626,7 +626,9 @@ function buildSpeakingQuestions(setup, tasks) {
   return uniqueTasks.map(task => ({
     item: task.item,
     form: task.form,
-    direction: setup.questionType,
+    direction: setup.questionType === "mixed"
+      ? (Math.random() < 0.5 ? "dict_to_conj" : "conj_to_dict")
+      : setup.questionType,
     answered: false,
     correct: false,
     heard: ""
@@ -749,41 +751,42 @@ function renderQuestion() {
 }
 
 function getSpeakingExpectedAnswers(q) {
-  if (q.direction === "en_to_jp") return getExpectedAnswers(q.item, q.form);
-  const kana = getConjugated(q.item, q.form, "kana");
-  const kanji = getConjugated(q.item, q.form, "kanji");
-  return [kana, ...(kanji && kanji !== kana ? [kanji] : [])];
+  if (q.direction === "dict_to_conj") return getExpectedAnswers(q.item, q.form);
+  return [q.item.jp_kana, ...(q.item.jp_kanji ? [q.item.jp_kanji] : [])];
 }
 
 function renderSpeakingQuestion() {
   const q = speakingSession.questions[speakingSession.idx];
   const total = speakingSession.questions.length;
   const n = speakingSession.idx + 1;
-  const modeLabel = q.direction === "en_to_jp" ? "en→jp" : "jp speaking";
+  const modeLabel = q.direction === "dict_to_conj" ? "Dict→Conj" : "Conj→Dict";
   $("#speakingMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} • ${modeLabel}`;
   $("#speakingBar").style.width = `${(n - 1) / total * 100}%`;
   $("#btnSpeakingStar").textContent = isStarred(q.item.id) ? "★" : "☆";
   $("#btnSpeakingClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
 
-  const promptJP = getConjugated(q.item, q.form, speakingSession.setup.displayMode);
-  if (q.direction === "en_to_jp") {
-    $("#speakingPrompt").textContent = q.item.en || "(No English gloss)";
+  if (q.direction === "dict_to_conj") {
+    const promptJP = getJP(q.item, speakingSession.setup.displayMode);
+    const typeHint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
+    $("#speakingPrompt").textContent = `${promptJP}${typeHint}`;
     const base = describeFormBase(q.item.type, q.form);
     const hint = speakingSession.setup.showHint ? ` ${describeFormHint(q.item, q.form)}` : "";
-    $("#speakingSubPrompt").textContent = `Speak Japanese: ${base}${hint}`.trim();
-    if (speakingSession.setup.showEnglish) {
-      $("#speakingEnglishPrompt").textContent = `Expected concept: ${promptJP}`;
+    $("#speakingSubPrompt").textContent = `Speak: ${base}${hint}`.trim();
+    if (speakingSession.setup.showEnglish && q.item.en) {
+      $("#speakingEnglishPrompt").textContent = q.item.en;
       $("#speakingEnglishPrompt").classList.remove("hidden");
     } else {
       $("#speakingEnglishPrompt").textContent = "";
       $("#speakingEnglishPrompt").classList.add("hidden");
     }
   } else {
-    const typeHint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
-    $("#speakingPrompt").textContent = `${promptJP}${typeHint}`;
-    $("#speakingSubPrompt").textContent = "Speak this Japanese naturally.";
-    if (speakingSession.setup.showEnglish && q.item.en) {
-      $("#speakingEnglishPrompt").textContent = q.item.en;
+    const promptJP = getConjugated(q.item, q.form, speakingSession.setup.displayMode);
+    $("#speakingPrompt").textContent = promptJP;
+    $("#speakingSubPrompt").textContent = "Speak: Dictionary form";
+    if (speakingSession.setup.showEnglish) {
+      const base = getJP(q.item, speakingSession.setup.displayMode);
+      const hint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
+      $("#speakingEnglishPrompt").textContent = `Answer concept: ${base}${hint}`.trim();
       $("#speakingEnglishPrompt").classList.remove("hidden");
     } else {
       $("#speakingEnglishPrompt").textContent = "";
