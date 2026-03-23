@@ -763,6 +763,23 @@ function getSpeakingExpectedAnswers(q) {
   return [q.item.jp_kana, ...(q.item.jp_kanji ? [q.item.jp_kanji] : [])];
 }
 
+function getSpeakingAnswerScripts(q) {
+  if (q.direction === "dict_to_conj") {
+    const c = q.item.type === "verb" ? conjugateVerb(q.item, q.form) : conjugateAdj(q.item, q.form);
+    return { kana: c.kana || "", kanji: c.kanji || "" };
+  }
+  return { kana: q.item.jp_kana || "", kanji: q.item.jp_kanji || "" };
+}
+
+function formatHeardText(q, heard) {
+  const scripts = getSpeakingAnswerScripts(q);
+  const heardLabel = heard || "(no speech detected)";
+  const parts = [`Heard: ${heardLabel}`];
+  if (scripts.kana) parts.push(`Kana: ${scripts.kana}`);
+  if (scripts.kanji) parts.push(`Kanji: ${scripts.kanji}`);
+  return parts.join(" • ");
+}
+
 function renderSpeakingQuestion() {
   const q = speakingSession.questions[speakingSession.idx];
   const { displayMode, showEnglish } = speakingSession.setup;
@@ -998,9 +1015,8 @@ async function runSpeechCapture() {
   }
 
   if (speechController.isListening()) {
-    speechController.cancel();
-    $("#btnSpeakingListen").textContent = "🎤 Tap to speak";
-    $("#speakingListenStatus").textContent = "Listening stopped.";
+    speechController.stop();
+    $("#speakingListenStatus").textContent = "Stopping… processing what I heard.";
     return;
   }
 
@@ -1008,9 +1024,17 @@ async function runSpeechCapture() {
   $("#speakingListenStatus").textContent = "Listening…";
   try {
     const heard = await speechController.listen({ lang: "ja-JP", maxAlternatives: 3, timeoutMs: 9000 });
-    $("#speakingHeard").textContent = `Heard: ${heard || "(no speech detected)"}`;
-    checkSpeakingAnswer(heard || "");
-    $("#speakingListenStatus").textContent = "Done listening.";
+    const q = speakingSession?.questions?.[speakingSession.idx];
+    if (!q) return;
+    $("#speakingHeard").textContent = formatHeardText(q, heard);
+    if (heard) {
+      checkSpeakingAnswer(heard);
+      $("#speakingListenStatus").textContent = "Done listening.";
+    } else {
+      $("#speakingListenStatus").textContent = "No speech detected. Please try again.";
+      $("#speakingFeedback").textContent = "I didn’t catch anything—please try again.";
+      $("#speakingFeedback").className = "feedback";
+    }
   } catch (err) {
     $("#speakingListenStatus").textContent = err?.message || "Could not listen. Please try again.";
   } finally {
