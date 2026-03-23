@@ -79,8 +79,15 @@ export function createSpeechController() {
     };
 
     recognition.onresult = (event) => {
-      const latest = event.results?.[0]?.[0]?.transcript || "";
-      transcript = latest.trim();
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const chunk = event.results?.[i]?.[0]?.transcript || "";
+        if (!chunk) continue;
+        if (event.results[i].isFinal) {
+          transcript = `${transcript} ${chunk}`.trim();
+        } else {
+          transcript = chunk.trim();
+        }
+      }
     };
     recognition.onerror = (event) => {
       if (stopRequested && event?.error === "aborted") {
