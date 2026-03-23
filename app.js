@@ -757,6 +757,7 @@ function getSpeakingExpectedAnswers(q) {
 
 function renderSpeakingQuestion() {
   const q = speakingSession.questions[speakingSession.idx];
+  const { displayMode, showEnglish } = speakingSession.setup;
   const total = speakingSession.questions.length;
   const n = speakingSession.idx + 1;
   const modeLabel = q.direction === "dict_to_conj" ? "Dict→Conj" : "Conj→Dict";
@@ -765,39 +766,34 @@ function renderSpeakingQuestion() {
   $("#btnSpeakingStar").textContent = isStarred(q.item.id) ? "★" : "☆";
   $("#btnSpeakingClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
 
+  let promptJP = "";
+  let answerLabel = "";
   if (q.direction === "dict_to_conj") {
-    const promptJP = getJP(q.item, speakingSession.setup.displayMode);
-    const base = describeFormBase(q.item.type, q.form).toLowerCase();
-    const typeHint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
-    $("#speakingPrompt").textContent = `${promptJP} ${base}${typeHint}`.trim();
+    promptJP = getJP(q.item, displayMode);
+    const base = describeFormBase(q.item.type, q.form);
     const hint = speakingSession.setup.showHint ? ` ${describeFormHint(q.item, q.form)}` : "";
-    $("#speakingSubPrompt").textContent = `Speak the conjugated form${hint}`.trim();
-    if (speakingSession.setup.showEnglish && q.item.en) {
-      $("#speakingEnglishPrompt").textContent = q.item.en;
-      $("#speakingEnglishPrompt").classList.remove("hidden");
-    } else {
-      $("#speakingEnglishPrompt").textContent = "";
-      $("#speakingEnglishPrompt").classList.add("hidden");
-    }
+    answerLabel = `Answer: ${base}${hint}`.trim();
   } else {
-    const promptJP = getConjugated(q.item, q.form, speakingSession.setup.displayMode);
-    $("#speakingPrompt").textContent = promptJP;
-    $("#speakingSubPrompt").textContent = "Speak: Dictionary form";
-    if (speakingSession.setup.showEnglish) {
-      const base = getJP(q.item, speakingSession.setup.displayMode);
-      const hint = speakingSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
-      $("#speakingEnglishPrompt").textContent = `Answer concept: ${base}${hint}`.trim();
-      $("#speakingEnglishPrompt").classList.remove("hidden");
-    } else {
-      $("#speakingEnglishPrompt").textContent = "";
-      $("#speakingEnglishPrompt").classList.add("hidden");
-    }
+    promptJP = getConjugated(q.item, q.form, displayMode);
+    answerLabel = "Answer: Dictionary";
+  }
+  const showHintTag = speakingSession.setup.showWordTypeHint && q.direction === "dict_to_conj";
+  const promptWithHint = showHintTag ? `${promptJP} ${getWordTypeHint(q.item)}` : promptJP;
+  $("#speakingPrompt").textContent = promptWithHint;
+  $("#speakingSubPrompt").textContent = answerLabel;
+
+  if (showEnglish && q.item.en) {
+    $("#speakingEnglishPrompt").textContent = q.item.en;
+    $("#speakingEnglishPrompt").classList.remove("hidden");
+  } else {
+    $("#speakingEnglishPrompt").textContent = "";
+    $("#speakingEnglishPrompt").classList.add("hidden");
   }
 
   $("#speakingFeedback").textContent = "";
   $("#speakingFeedback").className = "feedback";
   $("#speakingHeard").textContent = "";
-  $("#speakingListenStatus").textContent = "Tap 🎤 Speak to answer.";
+  $("#speakingListenStatus").textContent = "Tap to speak to answer.";
   $("#btnSpeakingListen").textContent = "🎤 Tap to speak";
   $("#btnSpeakingListen").disabled = false;
   $("#btnSpeakingNext").classList.add("hidden");
@@ -971,13 +967,19 @@ function checkSpeakingAnswer(userAnswer) {
     $("#speakingFeedback").textContent = "✓ Correct";
     $("#speakingFeedback").classList.add("good");
   } else {
-    $("#speakingFeedback").textContent = `✗ Not quite. Expected: ${expected[0]}`;
+    $("#speakingFeedback").textContent = `✗ Not quite. Correct: ${expected[0]}`;
     $("#speakingFeedback").classList.add("bad");
   }
 
   speakingSession.awaitingNext = true;
   $("#btnSpeakingNext").classList.remove("hidden");
+  $("#btnSpeakingListen").disabled = true;
   $("#speakingBar").style.width = `${(speakingSession.idx + 1) / speakingSession.questions.length * 100}%`;
+
+  if (settings.autoplayAudio) {
+    const audioForm = (q.direction === "dict_to_conj") ? q.form : null;
+    playAudioForItem(q.item, audioForm);
+  }
 }
 
 async function runSpeechCapture() {
@@ -1255,6 +1257,12 @@ function initEvents() {
   $("#btnSpeakingPracticeStar").addEventListener("click", () => startSpeakingSession(readSpeakingSetup(), true));
   $("#btnSpeakingPracticeClass").addEventListener("click", () => startSpeakingSession(readSpeakingSetup(), false, true));
   $("#btnSpeakingListen").addEventListener("click", runSpeechCapture);
+  $("#btnSpeakingReplay").addEventListener("click", () => {
+    const q = speakingSession?.questions?.[speakingSession.idx];
+    if (!q) return;
+    const audioForm = (q.direction === "dict_to_conj") ? q.form : null;
+    playAudioForItem(q.item, audioForm);
+  });
   $("#btnSpeakingNext").addEventListener("click", nextSpeakingQuestionOrFinish);
   $("#btnSpeakingExit").addEventListener("click", () => {
     speakingSession = null;
@@ -1390,6 +1398,7 @@ function initEvents() {
       e.preventDefault();
       if (inConjQuiz) $("#btnReplay").click();
       else if (inTypeQuiz) $("#btnTypeReplay").click();
+      else if (inSpeakingQuiz) $("#btnSpeakingReplay").click();
     }
 
     if (e.key === "Enter") {
