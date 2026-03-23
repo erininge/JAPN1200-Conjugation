@@ -261,7 +261,7 @@
             <div class="progress" style="margin-top:8px"><div id="speakingBar"></div></div>
           </div>
           <div class="row" style="justify-content:flex-end; flex:0">
-            <button class="primary" id="btnSpeakingListen">🎤 Tap to speak</button>
+            <button class="ghost" id="btnSpeakingReplay">= Audio</button>
             <button class="secondary starBtn" id="btnSpeakingStar" title="Toggle star (`)">☆</button>
             <button class="secondary starBtn" id="btnSpeakingClass" title="Toggle class mark (c)">📗</button>
             <button class="ghost" id="btnSpeakingExit">Exit</button>
@@ -271,7 +271,10 @@
         <div class="prompt" id="speakingPrompt">—</div>
         <div class="meta enLine" id="speakingEnglishPrompt"></div>
         <div class="answerMeta" id="speakingSubPrompt">Answer: —</div>
-        <div class="meta" id="speakingListenStatus">Tap 🎤 Speak to answer.</div>
+        <div id="speakingInputBox" style="margin-top:10px">
+          <button class="primary" id="btnSpeakingListen">🎤 Tap to speak</button>
+        </div>
+        <div class="meta" id="speakingListenStatus">Tap to speak to answer.</div>
         <div class="meta" id="speakingHeard"></div>
 
         <div class="btnrow">
