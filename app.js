@@ -622,17 +622,25 @@ function startSession(setup, forceStarred=false, forceClass=false) {
 }
 
 function buildSpeakingQuestions(setup, tasks) {
+  const normalizedQuestionType = normalizeSpeakingQuestionType(setup.questionType);
   const uniqueTasks = shuffle(tasks.slice()).slice(0, Math.min(setup.questionCount, tasks.length));
   return uniqueTasks.map(task => ({
     item: task.item,
     form: task.form,
-    direction: setup.questionType === "mixed"
+    direction: normalizedQuestionType === "mixed"
       ? (Math.random() < 0.5 ? "dict_to_conj" : "conj_to_dict")
-      : setup.questionType,
+      : normalizedQuestionType,
     answered: false,
     correct: false,
     heard: ""
   }));
+}
+
+function normalizeSpeakingQuestionType(questionType) {
+  if (questionType === "jp_speaking") return "dict_to_conj";
+  if (questionType === "en_speaking") return "conj_to_dict";
+  if (questionType === "dict_to_conj" || questionType === "conj_to_dict" || questionType === "mixed") return questionType;
+  return "dict_to_conj";
 }
 
 function startSpeakingSession(setup, forceStarred = false, forceClass = false) {
