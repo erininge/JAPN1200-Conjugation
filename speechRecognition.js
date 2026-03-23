@@ -5,6 +5,7 @@ export function createSpeechController() {
       supported: false,
       listen: async () => "",
       cancel: () => {},
+      stop: () => {},
       isListening: () => false
     };
   }
@@ -12,6 +13,7 @@ export function createSpeechController() {
   let activeRecognition = null;
   let activeStopTimer = null;
   let listening = false;
+  let stopRequested = false;
 
   const clearStopTimer = () => {
     if (activeStopTimer) {
@@ -22,6 +24,7 @@ export function createSpeechController() {
 
   const cancel = () => {
     clearStopTimer();
+    stopRequested = false;
     if (activeRecognition) {
       activeRecognition.onresult = null;
       activeRecognition.onerror = null;
@@ -29,6 +32,17 @@ export function createSpeechController() {
       listening = false;
       activeRecognition.abort();
       activeRecognition = null;
+    }
+  };
+
+  const stop = () => {
+    if (!activeRecognition) return;
+    stopRequested = true;
+    clearStopTimer();
+    try {
+      activeRecognition.stop();
+    } catch {
+      // Ignore stop errors and let the active listener resolve via onend/error.
     }
   };
 
@@ -46,31 +60,38 @@ export function createSpeechController() {
     const recognition = new SpeechRecognition();
     activeRecognition = recognition;
     listening = true;
+    stopRequested = false;
     recognition.lang = lang;
     recognition.interimResults = false;
     recognition.continuous = false;
     recognition.maxAlternatives = maxAlternatives;
 
     let finalized = false;
+    let transcript = "";
     const finish = (fn) => (value) => {
       if (finalized) return;
       finalized = true;
       listening = false;
       clearStopTimer();
       activeRecognition = null;
+      stopRequested = false;
       fn(value);
     };
 
     recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || "";
-      finish(resolve)(transcript.trim());
+      const latest = event.results?.[0]?.[0]?.transcript || "";
+      transcript = latest.trim();
     };
     recognition.onerror = (event) => {
+      if (stopRequested && event?.error === "aborted") {
+        finish(resolve)(transcript);
+        return;
+      }
       const message = mapSpeechError(event?.error);
       finish(reject)(new Error(message));
     };
     recognition.onend = () => {
-      finish(resolve)("");
+      finish(resolve)(transcript);
     };
     activeStopTimer = setTimeout(() => {
       if (activeRecognition === recognition) {
@@ -85,5 +106,5 @@ export function createSpeechController() {
     }
   });
 
-  return { supported: true, listen, cancel, isListening: () => listening };
+  return { supported: true, listen, cancel, stop, isListening: () => listening };
 }

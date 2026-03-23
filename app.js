@@ -998,9 +998,8 @@ async function runSpeechCapture() {
   }
 
   if (speechController.isListening()) {
-    speechController.cancel();
-    $("#btnSpeakingListen").textContent = "🎤 Tap to speak";
-    $("#speakingListenStatus").textContent = "Listening stopped.";
+    speechController.stop();
+    $("#speakingListenStatus").textContent = "Stopping… processing what I heard.";
     return;
   }
 
@@ -1009,8 +1008,14 @@ async function runSpeechCapture() {
   try {
     const heard = await speechController.listen({ lang: "ja-JP", maxAlternatives: 3, timeoutMs: 9000 });
     $("#speakingHeard").textContent = `Heard: ${heard || "(no speech detected)"}`;
-    checkSpeakingAnswer(heard || "");
-    $("#speakingListenStatus").textContent = "Done listening.";
+    if (heard) {
+      checkSpeakingAnswer(heard);
+      $("#speakingListenStatus").textContent = "Done listening.";
+    } else {
+      $("#speakingListenStatus").textContent = "No speech detected. Please try again.";
+      $("#speakingFeedback").textContent = "I didn’t catch anything—please try again.";
+      $("#speakingFeedback").className = "feedback";
+    }
   } catch (err) {
     $("#speakingListenStatus").textContent = err?.message || "Could not listen. Please try again.";
   } finally {
