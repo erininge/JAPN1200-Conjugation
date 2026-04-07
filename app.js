@@ -675,14 +675,14 @@ function startSpeakingSession(setup, forceStarred = false, forceClass = false) {
 }
 
 function describeFormBase(itemType, form) {
-  const mapV = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
+  const mapV = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative", te:"Te-form" };
   const mapA = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
   return (itemType === "verb") ? mapV[form] : mapA[form];
 }
 
 function describeFormHint(item, form) {
   if (item.type === "verb") {
-    const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)" };
+    const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)", te:"(て / で)" };
     return map[form] || "";
   }
 
@@ -829,7 +829,7 @@ function buildAndShowChoices(_correctAnswer, q) {
   const { displayMode } = session.setup;
   const allItems = (q.item.type === "verb") ? verbs : adjs;
   const formsForType = q.item.type === "verb"
-    ? ["present", "negative", "past", "past_negative"]
+    ? ["present", "negative", "past", "past_negative", "te"]
     : ["present", "negative", "past", "past_negative"];
 
   const makeAnswerFor = (it, form = q.form) => {
@@ -1211,7 +1211,7 @@ function renderView() {
     const chips = document.createElement("div");
     chips.className = "chips";
 
-    const forms = (it.type === "verb") ? ["present","past","negative","past_negative"] : ["present","past","negative","past_negative"];
+    const forms = (it.type === "verb") ? ["present","past","negative","past_negative","te"] : ["present","past","negative","past_negative"];
 
     const out = document.createElement("div");
     out.className = "meta";
@@ -1221,7 +1221,7 @@ function renderView() {
       const c = document.createElement("button");
       c.className = "chip";
       c.textContent = (it.type === "verb")
-        ? ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg"}[form])
+        ? ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg",te:"Te"}[form])
         : ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg"}[form]);
 
       c.addEventListener("click", () => {
