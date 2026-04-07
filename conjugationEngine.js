@@ -4,6 +4,12 @@ const GODAN_I_STEM = {
   "う":"い","く":"き","ぐ":"ぎ","す":"し","つ":"ち","ぬ":"に","ぶ":"び","む":"み","る":"り"
 };
 
+const GODAN_TE_ENDINGS = {
+  "う":"って","つ":"って","る":"って",
+  "む":"んで","ぶ":"んで","ぬ":"んで",
+  "く":"いて","ぐ":"いで","す":"して"
+};
+
 function replaceOkurigana(kanji, kana, newKana) {
   // Best-effort: replace the kana ending in the kanji string.
   if (!kanji) return "";
@@ -45,6 +51,51 @@ export function conjugateVerb(item, form) {
     if (!repl) throw new Error("Unknown godan ending: " + kana);
     stemKana = kana.slice(0, -1) + repl;
     stemKanji = kanji ? replaceOkurigana(kanji, kana, repl) : "";
+  }
+
+  if (form === "te") {
+    if (cls === "ichidan") {
+      const rootKanji = kanji ? (kanji.endsWith("る") ? kanji.slice(0, -1) : replaceOkurigana(kanji, kana, "")) : "";
+      return {
+        kana: kana.slice(0, -1) + "て",
+        kanji: rootKanji ? rootKanji + "て" : ""
+      };
+    }
+
+    if (cls === "irregular") {
+      if (kana === "する" || kana.endsWith("する")) {
+        return {
+          kana: kana.slice(0, -2) + "して",
+          kanji: kanji && kanji.endsWith("する") ? kanji.slice(0, -2) + "して" : ""
+        };
+      }
+      if (kana === "くる" || kana.endsWith("くる")) {
+        let kanjiOut = "";
+        if (kanji) {
+          if (kanji === "来る") kanjiOut = "来て";
+          else kanjiOut = replaceOkurigana(kanji, kana, "きて");
+        }
+        return {
+          kana: kana.slice(0, -2) + "きて",
+          kanji: kanjiOut
+        };
+      }
+    }
+
+    if (kana === "いく") {
+      return {
+        kana: "いって",
+        kanji: kanji ? replaceOkurigana(kanji, kana, "って") : ""
+      };
+    }
+
+    const last = kana.slice(-1);
+    const teEnding = GODAN_TE_ENDINGS[last];
+    if (!teEnding) throw new Error("Unknown godan ending for te-form: " + kana);
+    return {
+      kana: kana.slice(0, -1) + teEnding,
+      kanji: kanji ? replaceOkurigana(kanji, kana, teEnding) : ""
+    };
   }
 
   const ending = (f) => {

@@ -47,5 +47,8 @@
   { "id": "verb_045", "jp_kana": "うける", "jp_kanji": "受ける", "en": "to receive; to take (a test)", "type": "verb", "class": "ichidan", "jlpt": "N4" },
   { "id": "verb_046", "jp_kana": "のる", "jp_kanji": "乗る", "en": "to ride; to board", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" },
   { "id": "verb_047", "jp_kana": "でかける", "jp_kanji": "出かける", "en": "to go out (for fun)", "type": "verb", "class": "ichidan", "jlpt": "N5", "list": "class" },
-  { "id": "verb_048", "jp_kana": "やる", "jp_kanji": "", "en": "to do; to perform", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" }
+  { "id": "verb_048", "jp_kana": "やる", "jp_kanji": "", "en": "to do; to perform", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" },
+  { "id": "verb_049", "jp_kana": "とる", "jp_kanji": "取る", "en": "to take", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" },
+  { "id": "verb_050", "jp_kana": "あそぶ", "jp_kanji": "遊ぶ", "en": "to play", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" },
+  { "id": "verb_051", "jp_kana": "いそぐ", "jp_kanji": "急ぐ", "en": "to hurry", "type": "verb", "class": "godan", "jlpt": "N5", "list": "class" }
 ]
