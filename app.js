@@ -682,7 +682,24 @@ function describeFormBase(itemType, form) {
 
 function describeFormHint(item, form) {
   if (item.type === "verb") {
-    const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)", te:"(て / で)" };
+    const teHint = (() => {
+      if (form !== "te") return "";
+      const kana = item.jp_kana || "";
+      if (item.class === "ichidan") return "(て)";
+      if (item.class === "irregular") {
+        if (kana === "する" || kana.endsWith("する")) return "(して)";
+        if (kana === "くる" || kana.endsWith("くる")) return "(きて)";
+      }
+      if (kana === "いく") return "(って)";
+      const godanTeEndings = {
+        "う": "(って)", "つ": "(って)", "る": "(って)",
+        "む": "(んで)", "ぶ": "(んで)", "ぬ": "(んで)",
+        "く": "(いて)", "ぐ": "(いで)", "す": "(して)"
+      };
+      const last = kana.slice(-1);
+      return godanTeEndings[last] || "(て / で)";
+    })();
+    const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)", te:teHint };
     return map[form] || "";
   }
 
