@@ -16,7 +16,7 @@
         <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
         <div>
           <h1>JAPN1200 Conjugation</h1>
-          <div class="sub">v1.6.2</div>
+          <div class="sub">v1.7.0</div>
         </div>
       </div>
       <button class="secondary refreshBtn" id="btnRefreshApp" title="Check for updates and reload">🔄 Refresh app</button>
@@ -34,6 +34,7 @@
       <button class="tabbtn" data-tab="speaking">Speaking</button>
       <button class="tabbtn" data-tab="type">Type</button>
       <button class="tabbtn" data-tab="view">View Vocab</button>
+      <button class="tabbtn" data-tab="explanations">Explanations</button>
       <button class="tabbtn" data-tab="stats">Stats</button>
       <button class="tabbtn" data-tab="settings">Settings</button>
     </div>
@@ -345,6 +346,132 @@
         </thead>
         <tbody id="viewBody"></tbody>
       </table>
+    </section>
+
+    <section id="tab-explanations" class="card hidden">
+      <h2 style="margin:0 0 10px">Conjugation explanations</h2>
+      <details class="exp-section">
+        <summary>
+          <span>Verbs</span>
+          <span class="exp-arrow">▾</span>
+        </summary>
+        <div class="exp-content">
+          <details class="exp-subsection">
+            <summary>
+              <span>ます form (present, past, negative, past negative)</span>
+              <span class="exp-arrow">▾</span>
+            </summary>
+            <div class="exp-content">
+              <table class="table exp-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Dictionary form</th>
+                    <th>Present</th>
+                    <th>Past</th>
+                    <th>Negative</th>
+                    <th>Past negative</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Ru-verb</td>
+                    <td>たべる</td>
+                    <td>たべます</td>
+                    <td>たべました</td>
+                    <td>たべません</td>
+                    <td>たべませんでした</td>
+                  </tr>
+                  <tr>
+                    <td>U-verb</td>
+                    <td>かく</td>
+                    <td>かきます</td>
+                    <td>かきました</td>
+                    <td>かきません</td>
+                    <td>かきませんでした</td>
+                  </tr>
+                  <tr>
+                    <td>Irregular</td>
+                    <td>する / くる</td>
+                    <td>します / きます</td>
+                    <td>しました / きました</td>
+                    <td>しません / きません</td>
+                    <td>しませんでした / きませんでした</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="exp-subsection">
+            <summary>
+              <span>て form</span>
+              <span class="exp-arrow">▾</span>
+            </summary>
+            <div class="exp-content">
+              <table class="table exp-table">
+                <thead>
+                  <tr>
+                    <th>Last syllable (dictionary form)</th>
+                    <th>Replace with</th>
+                    <th>Examples</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>(Ru) る</td><td>て</td><td>たべる → たべて、ねる → ねて</td></tr>
+                  <tr><td>(U) う / つ / る</td><td>って</td><td>あう → あって、まつ → まって、とる → とって</td></tr>
+                  <tr><td>(U) む / ぶ / ぬ</td><td>んで</td><td>よむ → よんで、あそぶ → あそんで、しぬ → しんで</td></tr>
+                  <tr><td>(U) く</td><td>いて</td><td>かく → かいて</td></tr>
+                  <tr><td>(U) ぐ</td><td>いで</td><td>およぐ → およいで</td></tr>
+                  <tr><td>(U) す</td><td>して</td><td>はなす → はなして</td></tr>
+                  <tr><td>(irr) くる</td><td>きて</td><td>くる → きて</td></tr>
+                  <tr><td>(irr) する</td><td>して</td><td>する → して</td></tr>
+                  <tr><td>(U) いく</td><td>いって</td><td>いく → いって</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </details>
+
+      <details class="exp-section">
+        <summary>
+          <span>Adjectives</span>
+          <span class="exp-arrow">▾</span>
+        </summary>
+        <div class="exp-content">
+          <table class="table exp-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Dictionary form</th>
+                <th>Present</th>
+                <th>Past</th>
+                <th>Negative</th>
+                <th>Past negative</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>い-adjective</td>
+                <td>あつい</td>
+                <td>あついです</td>
+                <td>あつかったです</td>
+                <td>あつくないです</td>
+                <td>あつくなかったです</td>
+              </tr>
+              <tr>
+                <td>な-adjective</td>
+                <td>しずか(な)</td>
+                <td>しずかです</td>
+                <td>しずかでした</td>
+                <td>しずかじゃないです</td>
+                <td>しずかじゃなかったです</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
     </section>
 
     <section id="tab-type" class="card hidden">

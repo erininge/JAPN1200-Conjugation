@@ -50,6 +50,7 @@ function setTab(name) {
   $("#tab-speaking").classList.toggle("hidden", name !== "speaking");
   $("#tab-type").classList.toggle("hidden", name !== "type");
   $("#tab-view").classList.toggle("hidden", name !== "view");
+  $("#tab-explanations").classList.toggle("hidden", name !== "explanations");
   $("#tab-stats").classList.toggle("hidden", name !== "stats");
   $("#tab-settings").classList.toggle("hidden", name !== "settings");
   $("#tab-quiz").classList.add("hidden");
@@ -67,6 +68,7 @@ function showQuiz() {
   $("#tab-speaking").classList.add("hidden");
   $("#tab-type").classList.add("hidden");
   $("#tab-view").classList.add("hidden");
+  $("#tab-explanations").classList.add("hidden");
   $("#tab-stats").classList.add("hidden");
   $("#tab-settings").classList.add("hidden");
   $("#tab-quiz").classList.remove("hidden");
