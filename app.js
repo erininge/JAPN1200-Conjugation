@@ -290,19 +290,66 @@ const speechController = createSpeechController();
 let swRegistration = null;
 let appRefreshInProgress = false;
 
+const TE_MATCH_RULES = [
+  { id: "godan_u_tte", dictLabel: "う", teLabel: "って", teEnding: "って" },
+  { id: "godan_tsu_tte", dictLabel: "つ", teLabel: "って", teEnding: "って" },
+  { id: "godan_ru_tte", dictLabel: "る (Godan)", teLabel: "って", teEnding: "って" },
+  { id: "godan_mu_nde", dictLabel: "む", teLabel: "んで", teEnding: "んで" },
+  { id: "godan_bu_nde", dictLabel: "ぶ", teLabel: "んで", teEnding: "んで" },
+  { id: "godan_nu_nde", dictLabel: "ぬ", teLabel: "んで", teEnding: "んで" },
+  { id: "godan_ku_ite", dictLabel: "く", teLabel: "いて", teEnding: "いて" },
+  { id: "godan_gu_ide", dictLabel: "ぐ", teLabel: "いで", teEnding: "いで" },
+  { id: "godan_su_shite", dictLabel: "す", teLabel: "して", teEnding: "して" },
+  { id: "ichidan_te", dictLabel: "る (Ichidan)", teLabel: "て", teEnding: "て" },
+  { id: "kuru_kite", dictLabel: "くる", teLabel: "きて", teEnding: "きて" },
+  { id: "suru_shite", dictLabel: "する", teLabel: "して", teEnding: "して" },
+  { id: "iku_itte", dictLabel: "いく (exception)", teLabel: "いって", teEnding: "いって" }
+];
+
 
 
 function readTypeSetup() {
+  const gameMode = $("#typeGameMode")?.value || "class_guess";
   const wt = $$("input[name='typeWordType']").find(r => r.checked)?.value || "verbs";
   return {
+    gameMode,
     wt,
     displayMode: $("#typeDisplayMode").value,
     questionCount: Number($("#typeQuestionCount").value || 20),
     starredOnly: $("#typeStarredOnly").checked,
     classOnly: $("#typeClassOnly").checked,
     showEnglish: $("#typeShowEnglish").checked,
-    showWordTypeHint: $("#showWordTypeHint").checked
+    showWordTypeHint: $("#showWordTypeHint").checked,
+    teQuestionMode: $("#typeTeQuestionMode")?.value || "mixed",
+    teAnswerType: $("#typeTeAnswerType")?.value || "mc"
   };
+}
+
+function applyTypeGameModeUI() {
+  const mode = $("#typeGameMode")?.value || "class_guess";
+  $("#typeClassSettings").classList.toggle("hidden", mode !== "class_guess");
+  $("#typeTeSettings").classList.toggle("hidden", mode !== "te_match");
+}
+
+function getTeMatchRule(item) {
+  const kana = item.jp_kana || "";
+  if (item.class === "ichidan") return TE_MATCH_RULES.find(r => r.id === "ichidan_te");
+  if (item.class === "irregular") {
+    if (kana === "くる" || kana.endsWith("くる")) return TE_MATCH_RULES.find(r => r.id === "kuru_kite");
+    if (kana === "する" || kana.endsWith("する")) return TE_MATCH_RULES.find(r => r.id === "suru_shite");
+  }
+  if (kana === "いく") return TE_MATCH_RULES.find(r => r.id === "iku_itte");
+  const last = kana.slice(-1);
+  if (last === "う") return TE_MATCH_RULES.find(r => r.id === "godan_u_tte");
+  if (last === "つ") return TE_MATCH_RULES.find(r => r.id === "godan_tsu_tte");
+  if (last === "る") return TE_MATCH_RULES.find(r => r.id === "godan_ru_tte");
+  if (last === "む") return TE_MATCH_RULES.find(r => r.id === "godan_mu_nde");
+  if (last === "ぶ") return TE_MATCH_RULES.find(r => r.id === "godan_bu_nde");
+  if (last === "ぬ") return TE_MATCH_RULES.find(r => r.id === "godan_nu_nde");
+  if (last === "く") return TE_MATCH_RULES.find(r => r.id === "godan_ku_ite");
+  if (last === "ぐ") return TE_MATCH_RULES.find(r => r.id === "godan_gu_ide");
+  if (last === "す") return TE_MATCH_RULES.find(r => r.id === "godan_su_shite");
+  return null;
 }
 
 function getWaitingWorker(reg) {
@@ -382,14 +429,32 @@ function buildTypePool(setup) {
 }
 
 function startTypeSession(setup) {
-  const pool = buildTypePool(setup);
+  let pool = buildTypePool(setup);
+  if (setup.gameMode === "te_match") {
+    pool = pool.filter(it => it.type === "verb" && !!getTeMatchRule(it));
+  }
   if (pool.length === 0) {
     alert("No items matched your selection (try turning off Starred only or add words).");
     return;
   }
 
   const questions = [];
-  for (let i=0;i<setup.questionCount;i++) questions.push({ item: randPick(pool), answered:false, correct:false });
+  if (setup.gameMode === "te_match") {
+    const maxUnique = pool.length;
+    const count = Math.min(setup.questionCount, maxUnique);
+    if (setup.questionCount > maxUnique) {
+      showToast(`Only ${maxUnique} unique te-match questions available. Using ${maxUnique}.`);
+    }
+    for (const item of shuffle(pool.slice()).slice(0, count)) {
+      let direction = setup.teQuestionMode;
+      if (direction === "mixed") direction = Math.random() < 0.5 ? "dict_to_conj" : "conj_to_dict";
+      let answerType = setup.teAnswerType;
+      if (answerType === "both") answerType = Math.random() < 0.5 ? "typing" : "mc";
+      questions.push({ item, direction, answerType, answered:false, correct:false });
+    }
+  } else {
+    for (let i=0;i<setup.questionCount;i++) questions.push({ item: randPick(pool), answered:false, correct:false });
+  }
 
   typeSession = { setup, idx:0, questions, awaitingNext:false, lastChoices:[] };
   $("#typeSetup").classList.add("hidden");
@@ -397,7 +462,7 @@ function startTypeSession(setup) {
   renderTypeQuestion();
 }
 
-function getTypeChoices(item) {
+function getTypeClassChoices(item) {
   if (item.type === "verb") return [
     { label: "Ichidan", value: "ichidan" },
     { label: "Godan", value: "godan" },
@@ -409,17 +474,44 @@ function getTypeChoices(item) {
   ];
 }
 
+function getTypeTeChoices(q) {
+  const rule = getTeMatchRule(q.item);
+  const all = q.direction === "dict_to_conj"
+    ? TE_MATCH_RULES.map(r => ({ label: `${r.dictLabel} → ${r.teLabel}`, value: r.teLabel }))
+    : TE_MATCH_RULES.map(r => ({ label: `${r.teLabel} ← ${r.dictLabel}`, value: r.dictLabel }));
+  const correctValue = q.direction === "dict_to_conj" ? rule?.teLabel : rule?.dictLabel;
+  const distractors = shuffle(all.filter(x => x.value !== correctValue)).slice(0, 3);
+  return shuffle([{ label: q.direction === "dict_to_conj" ? `${rule?.dictLabel} → ${rule?.teLabel}` : `${rule?.teLabel} ← ${rule?.dictLabel}`, value: correctValue }, ...distractors]);
+}
+
 function renderTypeQuestion() {
   const q = typeSession.questions[typeSession.idx];
+  const isTeMatch = typeSession.setup.gameMode === "te_match";
   const total = typeSession.questions.length;
   const n = typeSession.idx + 1;
 
-  $("#typeMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} type`;
+  if (isTeMatch) {
+    const directionLabel = q.direction === "dict_to_conj" ? "Dict→Conj" : "Conj→Dict";
+    const answerLabel = q.answerType === "typing" ? "Typing" : "Multiple choice";
+    $("#typeMeta").textContent = `${n}/${total} • Te match • ${directionLabel} • ${answerLabel}`;
+  } else {
+    $("#typeMeta").textContent = `${n}/${total} • ${q.item.type === "verb" ? "Verb" : "Adjective"} type`;
+  }
   $("#typeBar").style.width = `${(n-1)/total*100}%`;
-  $("#typePrompt").textContent = getJP(q.item, typeSession.setup.displayMode);
-  const typePrompt = getJP(q.item, typeSession.setup.displayMode);
-  const typeHint = typeSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
-  $("#typePrompt").textContent = `${typePrompt}${typeHint}`;
+  if (isTeMatch) {
+    const prompt = q.direction === "dict_to_conj"
+      ? getJP(q.item, typeSession.setup.displayMode)
+      : getConjugated(q.item, "te", typeSession.setup.displayMode);
+    $("#typePrompt").textContent = prompt;
+    $("#typeSubPrompt").textContent = q.direction === "dict_to_conj"
+      ? "Answer: Match the te-ending rule."
+      : "Answer: Match the dictionary ending rule.";
+  } else {
+    const typePrompt = getJP(q.item, typeSession.setup.displayMode);
+    const typeHint = typeSession.setup.showWordTypeHint ? ` ${getWordTypeHint(q.item)}` : "";
+    $("#typePrompt").textContent = `${typePrompt}${typeHint}`;
+    $("#typeSubPrompt").textContent = "Answer: —";
+  }
   $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
   $("#btnTypeClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
 
@@ -432,23 +524,32 @@ function renderTypeQuestion() {
     englishLine.classList.add("hidden");
   }
 
-  const options = getTypeChoices(q.item);
-  typeSession.lastChoices = options;
+  const usingTyping = isTeMatch && q.answerType === "typing";
+  $("#typeTypingBox").classList.toggle("hidden", !usingTyping);
+  $("#btnTypeSubmit").classList.toggle("hidden", !usingTyping);
+  $("#typeChoices").classList.toggle("hidden", usingTyping);
+  $("#typeAnswerInput").value = "";
+
+  const options = isTeMatch ? getTypeTeChoices(q) : getTypeClassChoices(q.item);
+  typeSession.lastChoices = usingTyping ? [] : options;
   const box = $("#typeChoices");
   box.innerHTML = "";
-  options.forEach((opt, i) => {
-    const div = document.createElement("div");
-    div.className = "choice";
-    div.dataset.index = String(i);
-    div.innerHTML = `<strong>${i+1}</strong><span>${opt.label}</span>`;
-    div.addEventListener("click", () => onChooseType(i));
-    box.appendChild(div);
-  });
+  if (!usingTyping) {
+    options.forEach((opt, i) => {
+      const div = document.createElement("div");
+      div.className = "choice";
+      div.dataset.index = String(i);
+      div.innerHTML = `<strong>${i+1}</strong><span>${opt.label}</span>`;
+      div.addEventListener("click", () => onChooseType(i));
+      box.appendChild(div);
+    });
+  }
 
   $("#typeFeedback").textContent = "";
   $("#typeFeedback").className = "feedback";
   $("#btnTypeNext").classList.add("hidden");
   typeSession.awaitingNext = false;
+  if (usingTyping) $("#typeAnswerInput").focus();
 }
 
 function recordTypeStats(q, correct) {
@@ -456,7 +557,7 @@ function recordTypeStats(q, correct) {
   bucket.answered += 1;
   if (correct) bucket.correct += 1;
 
-  const key = "type_guess";
+  const key = (typeSession?.setup?.gameMode === "te_match") ? "type_te_match" : "type_guess";
   bucket.perForm[key] = bucket.perForm[key] || { answered: 0, correct: 0 };
   bucket.perForm[key].answered += 1;
   if (correct) bucket.perForm[key].correct += 1;
@@ -466,9 +567,13 @@ function recordTypeStats(q, correct) {
 
 function checkTypeAnswer(selectedValue) {
   const q = typeSession.questions[typeSession.idx];
+  const isTeMatch = typeSession.setup.gameMode === "te_match";
   if (typeSession.awaitingNext) return;
 
-  const correct = selectedValue === q.item.class;
+  const correctValue = isTeMatch
+    ? (q.direction === "dict_to_conj" ? getTeMatchRule(q.item)?.teLabel : getTeMatchRule(q.item)?.dictLabel)
+    : q.item.class;
+  const correct = selectedValue === correctValue;
   q.answered = true;
   q.correct = correct;
   recordTypeStats(q, correct);
@@ -477,8 +582,8 @@ function checkTypeAnswer(selectedValue) {
     $("#typeFeedback").textContent = "✓ Correct";
     $("#typeFeedback").classList.add("good");
   } else {
-    const options = getTypeChoices(q.item);
-    const label = options.find(x => x.value === q.item.class)?.label || q.item.class;
+    const options = isTeMatch ? getTypeTeChoices(q) : getTypeClassChoices(q.item);
+    const label = options.find(x => x.value === correctValue)?.label || correctValue;
     $("#typeFeedback").textContent = `✗ Not quite. Correct: ${label}`;
     $("#typeFeedback").classList.add("bad");
   }
@@ -490,15 +595,40 @@ function checkTypeAnswer(selectedValue) {
   if (settings.autoplayAudio) playAudioForItem(q.item);
 }
 
+function normalizeTeMatchAnswer(value) {
+  return normalizeAnswer(value).replace(/[()（）]/g, "").replace(/\s+/g, "").toLowerCase();
+}
+
+function submitTypeTypingAnswer() {
+  if (!typeSession) return;
+  const q = typeSession.questions[typeSession.idx];
+  if (typeSession.setup.gameMode !== "te_match" || q.answerType !== "typing") return;
+  const userRaw = $("#typeAnswerInput").value || "";
+  const rule = getTeMatchRule(q.item);
+  if (!rule) return;
+
+  const expected = q.direction === "dict_to_conj"
+    ? [rule.teLabel]
+    : [rule.dictLabel, rule.dictLabel.replace(/\s*\/\s*/g, "/"), rule.dictLabel.replace(/\s*\/\s*/g, " / ")];
+  const ua = normalizeTeMatchAnswer(userRaw);
+  const isCorrect = expected.some(x => normalizeTeMatchAnswer(x) === ua);
+  checkTypeAnswer(isCorrect ? expected[0] : userRaw);
+}
+
 function onChooseType(i) {
   const opt = typeSession.lastChoices?.[i];
   if (!opt) return;
   checkTypeAnswer(opt.value);
   const nodes = $$("#typeChoices .choice");
+  const isTeMatch = typeSession.setup.gameMode === "te_match";
+  const q = typeSession.questions[typeSession.idx];
+  const correctValue = isTeMatch
+    ? (q.direction === "dict_to_conj" ? getTeMatchRule(q.item)?.teLabel : getTeMatchRule(q.item)?.dictLabel)
+    : q.item.class;
   nodes.forEach((n, idx) => {
     n.classList.remove("correct", "wrong");
     if (idx === i) n.classList.add(typeSession.questions[typeSession.idx].correct ? "correct" : "wrong");
-    if (typeSession.awaitingNext && typeSession.lastChoices[idx]?.value === typeSession.questions[typeSession.idx].item.class) n.classList.add("correct");
+    if (typeSession.awaitingNext && typeSession.lastChoices[idx]?.value === correctValue) n.classList.add("correct");
   });
 }
 
@@ -1287,6 +1417,7 @@ function initEvents() {
 
   $$("input[name='wordType']").forEach(r => r.addEventListener("change", applyWordTypeUI));
   $$("input[name='speakingWordType']").forEach(r => r.addEventListener("change", applySpeakingWordTypeUI));
+  $("#typeGameMode").addEventListener("change", applyTypeGameModeUI);
 
   $("#showWordTypeHint").addEventListener("change", () => {
     settings.showWordTypeHint = $("#showWordTypeHint").checked;
@@ -1297,6 +1428,7 @@ function initEvents() {
   $("#btnPracticeStar").addEventListener("click", () => startSession(readStudySetup(), true));
   $("#btnPracticeClass").addEventListener("click", () => startSession(readStudySetup(), false, true));
   $("#btnStartType").addEventListener("click", () => startTypeSession(readTypeSetup()));
+  $("#btnTypeSubmit").addEventListener("click", submitTypeTypingAnswer);
   $("#btnTypeNext").addEventListener("click", nextTypeQuestionOrFinish);
   $("#btnTypeExit").addEventListener("click", () => {
     typeSession = null;
@@ -1343,6 +1475,12 @@ function initEvents() {
 
   $("#btnTypeReplay").addEventListener("click", () => {
     showToast("Audio is not available at this time.");
+  });
+
+  $("#typeAnswerInput").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    submitTypeTypingAnswer();
   });
 
   $("#btnStar").addEventListener("click", () => {
@@ -1464,6 +1602,7 @@ function initEvents() {
       } else if (inTypeQuiz) {
         if (!typeSession) return;
         if (typeSession.awaitingNext) $("#btnTypeNext").click();
+        else if (!$("#btnTypeSubmit").classList.contains("hidden")) $("#btnTypeSubmit").click();
       } else if (inSpeakingQuiz) {
         if (!speakingSession) return;
         if (speakingSession.awaitingNext) $("#btnSpeakingNext").click();
@@ -1490,6 +1629,7 @@ async function init() {
   initEvents();
   applyWordTypeUI();
   applySpeakingWordTypeUI();
+  applyTypeGameModeUI();
   loadDefaultsToStudyUI();
   loadSettingsUI();
   $("#speakingUnsupported").classList.toggle("hidden", speechController.supported);

@@ -16,7 +16,7 @@
         <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
         <div>
           <h1>JAPN1200 Conjugation</h1>
-          <div class="sub">v1.7.0</div>
+          <div class="sub">v1.8.0</div>
         </div>
       </div>
       <button class="secondary refreshBtn" id="btnRefreshApp" title="Check for updates and reload">🔄 Refresh app</button>
@@ -480,6 +480,17 @@
 
         <div class="row">
           <div>
+            <label>Game type</label>
+            <select id="typeGameMode">
+              <option value="class_guess">Word type match (existing)</option>
+              <option value="te_match">Te match</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="typeClassSettings">
+        <div class="row">
+          <div>
           <label>Question set</label>
           <div class="row" style="margin-top:10px; gap:14px">
             <label style="flex:0; white-space:nowrap"><input type="radio" name="typeWordType" value="verbs" checked> Verbs</label>
@@ -487,13 +498,38 @@
             <label style="flex:0; white-space:nowrap"><input type="radio" name="typeWordType" value="both"> Both</label>
           </div>
         </div>
+        </div>
+        </div>
 
-        <div>
-          <label>Display mode</label>
-          <select id="typeDisplayMode">
-            <option value="kana">Kana</option>
-            <option value="kanji">Kanji</option>
-          </select>
+        <div id="typeTeSettings" class="hidden">
+          <div class="row">
+            <div>
+              <label>Question type</label>
+              <select id="typeTeQuestionMode">
+                <option value="dict_to_conj">Dictionary → Conjugation</option>
+                <option value="conj_to_dict">Conjugation → Dictionary</option>
+                <option value="mixed">Mixed</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Answer type</label>
+              <select id="typeTeAnswerType">
+                <option value="typing">Typing</option>
+                <option value="mc" selected>Multiple choice</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Display mode</label>
+            <select id="typeDisplayMode">
+              <option value="kana">Kana</option>
+              <option value="kanji">Kanji</option>
+            </select>
           </div>
 
           <div>
@@ -531,11 +567,16 @@
         <div class="meta enLine" id="typeEnglishPrompt"></div>
         <div class="answerMeta" id="typeSubPrompt">Answer: —</div>
 
+        <div id="typeTypingBox" class="hidden" style="margin-top:10px">
+          <input type="text" id="typeAnswerInput" placeholder="Type answer…">
+        </div>
+
         <div class="choiceGrid" id="typeChoices"></div>
 
         <div class="feedback" id="typeFeedback"></div>
 
         <div class="btnrow">
+          <button class="primary hidden" id="btnTypeSubmit">Enter / Check</button>
           <button class="secondary hidden" id="btnTypeNext">Next</button>
         </div>
       </div>
