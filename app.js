@@ -30,6 +30,27 @@ function showToast(message) {
   }, 1800);
 }
 
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 780px)").matches;
+}
+
+function keepViewportStableOnMobile() {
+  if (!isMobileViewport()) return;
+  const x = window.scrollX;
+  const y = window.scrollY;
+  requestAnimationFrame(() => window.scrollTo(x, y));
+}
+
+function focusWithoutScroll(el) {
+  if (!el) return;
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    el.focus();
+  }
+  keepViewportStableOnMobile();
+}
+
 function syncSpeakingPanels() {
   const setup = $("#speakingSetup");
   const game = $("#speakingGame");
@@ -574,7 +595,7 @@ function renderTypeQuestion() {
   $("#typeFeedback").className = "feedback";
   $("#btnTypeNext").classList.add("hidden");
   typeSession.awaitingNext = false;
-  if (usingTyping) $("#typeAnswerInput").focus();
+  if (usingTyping) focusWithoutScroll($("#typeAnswerInput"));
 }
 
 function recordTypeStats(q, correct) {
@@ -618,6 +639,7 @@ function checkTypeAnswer(selectedValue) {
   typeSession.awaitingNext = true;
   $("#btnTypeNext").classList.remove("hidden");
   $("#typeBar").style.width = `${(typeSession.idx+1)/typeSession.questions.length*100}%`;
+  keepViewportStableOnMobile();
 
   if (!isTeMatch && settings.autoplayAudio) playAudioForItem(q.item);
 }
@@ -671,6 +693,7 @@ function nextTypeQuestionOrFinish() {
   }
   typeSession.idx += 1;
   renderTypeQuestion();
+  keepViewportStableOnMobile();
 }
 
 function readStudySetup() {
@@ -1507,6 +1530,7 @@ function initEvents() {
   $("#typeAnswerInput").addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
+    e.stopPropagation();
     submitTypeTypingAnswer();
   });
 
