@@ -293,13 +293,13 @@ let appRefreshInProgress = false;
 const TE_MATCH_RULES = [
   { id: "godan_u_tte", dictLabel: "う", teLabel: "って", teEnding: "って" },
   { id: "godan_tsu_tte", dictLabel: "つ", teLabel: "って", teEnding: "って" },
-  { id: "godan_ru_tte", dictLabel: "る", teLabel: "って", teEnding: "って" },
+  { id: "godan_ru_tte", dictLabel: "る (Godan)", teLabel: "って", teEnding: "って" },
   { id: "godan_mu_nde", dictLabel: "む", teLabel: "んで", teEnding: "んで" },
   { id: "godan_bu_nde", dictLabel: "ぶ", teLabel: "んで", teEnding: "んで" },
   { id: "godan_nu_nde", dictLabel: "ぬ", teLabel: "んで", teEnding: "んで" },
   { id: "godan_ku_ite", dictLabel: "く", teLabel: "いて", teEnding: "いて" },
   { id: "godan_gu_ide", dictLabel: "ぐ", teLabel: "いで", teEnding: "いで" },
-  { id: "ichidan_te", dictLabel: "る", teLabel: "て", teEnding: "て" },
+  { id: "ichidan_te", dictLabel: "る (Ichidan)", teLabel: "て", teEnding: "て" },
   { id: "kuru_kite", dictLabel: "くる", teLabel: "きて", teEnding: "きて" },
   { id: "suru_shite", dictLabel: "する", teLabel: "して", teEnding: "して" },
   { id: "iku_itte", dictLabel: "いく", teLabel: "いって", teEnding: "いって" }
