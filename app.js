@@ -293,17 +293,16 @@ let appRefreshInProgress = false;
 const TE_MATCH_RULES = [
   { id: "godan_u_tte", dictLabel: "う", teLabel: "って", teEnding: "って" },
   { id: "godan_tsu_tte", dictLabel: "つ", teLabel: "って", teEnding: "って" },
-  { id: "godan_ru_tte", dictLabel: "る (Godan)", teLabel: "って", teEnding: "って" },
+  { id: "godan_ru_tte", dictLabel: "る", teLabel: "って", teEnding: "って" },
   { id: "godan_mu_nde", dictLabel: "む", teLabel: "んで", teEnding: "んで" },
   { id: "godan_bu_nde", dictLabel: "ぶ", teLabel: "んで", teEnding: "んで" },
   { id: "godan_nu_nde", dictLabel: "ぬ", teLabel: "んで", teEnding: "んで" },
   { id: "godan_ku_ite", dictLabel: "く", teLabel: "いて", teEnding: "いて" },
   { id: "godan_gu_ide", dictLabel: "ぐ", teLabel: "いで", teEnding: "いで" },
-  { id: "godan_su_shite", dictLabel: "す", teLabel: "して", teEnding: "して" },
-  { id: "ichidan_te", dictLabel: "る (Ichidan)", teLabel: "て", teEnding: "て" },
+  { id: "ichidan_te", dictLabel: "る", teLabel: "て", teEnding: "て" },
   { id: "kuru_kite", dictLabel: "くる", teLabel: "きて", teEnding: "きて" },
   { id: "suru_shite", dictLabel: "する", teLabel: "して", teEnding: "して" },
-  { id: "iku_itte", dictLabel: "いく (exception)", teLabel: "いって", teEnding: "いって" }
+  { id: "iku_itte", dictLabel: "いく", teLabel: "いって", teEnding: "いって" }
 ];
 
 
@@ -348,7 +347,6 @@ function getTeMatchRule(item) {
   if (last === "ぬ") return TE_MATCH_RULES.find(r => r.id === "godan_nu_nde");
   if (last === "く") return TE_MATCH_RULES.find(r => r.id === "godan_ku_ite");
   if (last === "ぐ") return TE_MATCH_RULES.find(r => r.id === "godan_gu_ide");
-  if (last === "す") return TE_MATCH_RULES.find(r => r.id === "godan_su_shite");
   return null;
 }
 
@@ -429,30 +427,26 @@ function buildTypePool(setup) {
 }
 
 function startTypeSession(setup) {
-  let pool = buildTypePool(setup);
-  if (setup.gameMode === "te_match") {
-    pool = pool.filter(it => it.type === "verb" && !!getTeMatchRule(it));
-  }
-  if (pool.length === 0) {
-    alert("No items matched your selection (try turning off Starred only or add words).");
-    return;
-  }
-
   const questions = [];
   if (setup.gameMode === "te_match") {
-    const maxUnique = pool.length;
+    const maxUnique = TE_MATCH_RULES.length;
     const count = Math.min(setup.questionCount, maxUnique);
     if (setup.questionCount > maxUnique) {
       showToast(`Only ${maxUnique} unique te-match questions available. Using ${maxUnique}.`);
     }
-    for (const item of shuffle(pool.slice()).slice(0, count)) {
+    for (const rule of shuffle(TE_MATCH_RULES.slice()).slice(0, count)) {
       let direction = setup.teQuestionMode;
       if (direction === "mixed") direction = Math.random() < 0.5 ? "dict_to_conj" : "conj_to_dict";
       let answerType = setup.teAnswerType;
       if (answerType === "both") answerType = Math.random() < 0.5 ? "typing" : "mc";
-      questions.push({ item, direction, answerType, answered:false, correct:false });
+      questions.push({ rule, direction, answerType, answered:false, correct:false });
     }
   } else {
+    let pool = buildTypePool(setup);
+    if (pool.length === 0) {
+      alert("No items matched your selection (try turning off Starred only or add words).");
+      return;
+    }
     for (let i=0;i<setup.questionCount;i++) questions.push({ item: randPick(pool), answered:false, correct:false });
   }
 
@@ -475,13 +469,14 @@ function getTypeClassChoices(item) {
 }
 
 function getTypeTeChoices(q) {
-  const rule = getTeMatchRule(q.item);
-  const all = q.direction === "dict_to_conj"
-    ? TE_MATCH_RULES.map(r => ({ label: `${r.dictLabel} → ${r.teLabel}`, value: r.teLabel }))
-    : TE_MATCH_RULES.map(r => ({ label: `${r.teLabel} ← ${r.dictLabel}`, value: r.dictLabel }));
+  const rule = q.rule;
+  const allValues = q.direction === "dict_to_conj"
+    ? [...new Set(TE_MATCH_RULES.map(r => r.teLabel))]
+    : [...new Set(TE_MATCH_RULES.map(r => r.dictLabel))];
+  const all = allValues.map(value => ({ label: value, value }));
   const correctValue = q.direction === "dict_to_conj" ? rule?.teLabel : rule?.dictLabel;
   const distractors = shuffle(all.filter(x => x.value !== correctValue)).slice(0, 3);
-  return shuffle([{ label: q.direction === "dict_to_conj" ? `${rule?.dictLabel} → ${rule?.teLabel}` : `${rule?.teLabel} ← ${rule?.dictLabel}`, value: correctValue }, ...distractors]);
+  return shuffle([{ label: correctValue, value: correctValue }, ...distractors]);
 }
 
 function renderTypeQuestion() {
@@ -500,8 +495,8 @@ function renderTypeQuestion() {
   $("#typeBar").style.width = `${(n-1)/total*100}%`;
   if (isTeMatch) {
     const prompt = q.direction === "dict_to_conj"
-      ? getJP(q.item, typeSession.setup.displayMode)
-      : getConjugated(q.item, "te", typeSession.setup.displayMode);
+      ? q.rule?.dictLabel
+      : q.rule?.teLabel;
     $("#typePrompt").textContent = prompt;
     $("#typeSubPrompt").textContent = q.direction === "dict_to_conj"
       ? "Answer: Match the te-ending rule."
@@ -512,11 +507,20 @@ function renderTypeQuestion() {
     $("#typePrompt").textContent = `${typePrompt}${typeHint}`;
     $("#typeSubPrompt").textContent = "Answer: —";
   }
-  $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
-  $("#btnTypeClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
+  if (isTeMatch) {
+    $("#btnTypeStar").textContent = "☆";
+    $("#btnTypeClass").textContent = "📗";
+    $("#btnTypeStar").disabled = true;
+    $("#btnTypeClass").disabled = true;
+  } else {
+    $("#btnTypeStar").textContent = isStarred(q.item.id) ? "★" : "☆";
+    $("#btnTypeClass").textContent = isClassMarked(q.item.id) ? "📘" : "📗";
+    $("#btnTypeStar").disabled = false;
+    $("#btnTypeClass").disabled = false;
+  }
 
   const englishLine = $("#typeEnglishPrompt");
-  if (typeSession.setup.showEnglish && q.item.en) {
+  if (!isTeMatch && typeSession.setup.showEnglish && q.item.en) {
     englishLine.textContent = q.item.en;
     englishLine.classList.remove("hidden");
   } else {
@@ -553,7 +557,9 @@ function renderTypeQuestion() {
 }
 
 function recordTypeStats(q, correct) {
-  const bucket = (q.item.type === "verb") ? stats.verbs : stats.adjectives;
+  const bucket = (typeSession?.setup?.gameMode === "te_match")
+    ? stats.verbs
+    : ((q.item.type === "verb") ? stats.verbs : stats.adjectives);
   bucket.answered += 1;
   if (correct) bucket.correct += 1;
 
@@ -571,7 +577,7 @@ function checkTypeAnswer(selectedValue) {
   if (typeSession.awaitingNext) return;
 
   const correctValue = isTeMatch
-    ? (q.direction === "dict_to_conj" ? getTeMatchRule(q.item)?.teLabel : getTeMatchRule(q.item)?.dictLabel)
+    ? (q.direction === "dict_to_conj" ? q.rule?.teLabel : q.rule?.dictLabel)
     : q.item.class;
   const correct = selectedValue === correctValue;
   q.answered = true;
@@ -592,7 +598,7 @@ function checkTypeAnswer(selectedValue) {
   $("#btnTypeNext").classList.remove("hidden");
   $("#typeBar").style.width = `${(typeSession.idx+1)/typeSession.questions.length*100}%`;
 
-  if (settings.autoplayAudio) playAudioForItem(q.item);
+  if (!isTeMatch && settings.autoplayAudio) playAudioForItem(q.item);
 }
 
 function normalizeTeMatchAnswer(value) {
@@ -604,7 +610,7 @@ function submitTypeTypingAnswer() {
   const q = typeSession.questions[typeSession.idx];
   if (typeSession.setup.gameMode !== "te_match" || q.answerType !== "typing") return;
   const userRaw = $("#typeAnswerInput").value || "";
-  const rule = getTeMatchRule(q.item);
+  const rule = q.rule;
   if (!rule) return;
 
   const expected = q.direction === "dict_to_conj"
@@ -623,7 +629,7 @@ function onChooseType(i) {
   const isTeMatch = typeSession.setup.gameMode === "te_match";
   const q = typeSession.questions[typeSession.idx];
   const correctValue = isTeMatch
-    ? (q.direction === "dict_to_conj" ? getTeMatchRule(q.item)?.teLabel : getTeMatchRule(q.item)?.dictLabel)
+    ? (q.direction === "dict_to_conj" ? q.rule?.teLabel : q.rule?.dictLabel)
     : q.item.class;
   nodes.forEach((n, idx) => {
     n.classList.remove("correct", "wrong");
