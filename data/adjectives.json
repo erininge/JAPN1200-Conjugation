@@ -376,5 +376,41 @@
     "type": "adj",
     "class": "na",
     "list": "class"
+  },
+  {
+    "id": "adj_043",
+    "jp_kana": "すき",
+    "jp_kanji": "好き",
+    "en": "to like",
+    "type": "adj",
+    "class": "na",
+    "list": "class"
+  },
+  {
+    "id": "adj_044",
+    "jp_kana": "だいすき",
+    "jp_kanji": "大好き",
+    "en": "to love",
+    "type": "adj",
+    "class": "na",
+    "list": "class"
+  },
+  {
+    "id": "adj_045",
+    "jp_kana": "きらい",
+    "jp_kanji": "嫌い",
+    "en": "to dislike",
+    "type": "adj",
+    "class": "na",
+    "list": "class"
+  },
+  {
+    "id": "adj_046",
+    "jp_kana": "だいきらい",
+    "jp_kanji": "大嫌い",
+    "en": "to hate",
+    "type": "adj",
+    "class": "na",
+    "list": "class"
   }
 ]
