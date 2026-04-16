@@ -197,6 +197,18 @@ function applySpeakingWordTypeUI() {
   }
 }
 
+function applyVerbFormGroupUI() {
+  const group = $$("input[name='verbFormGroup']").find(r => r.checked)?.value || "masu";
+  $("#verbMasuForms")?.classList.toggle("hidden", group !== "masu");
+  $("#verbTeForms")?.classList.toggle("hidden", group !== "te");
+}
+
+function applySpeakingVerbFormGroupUI() {
+  const group = $$("input[name='speakingVerbFormGroup']").find(r => r.checked)?.value || "masu";
+  $("#speakingVerbMasuForms")?.classList.toggle("hidden", group !== "masu");
+  $("#speakingVerbTeForms")?.classList.toggle("hidden", group !== "te");
+}
+
 function loadDefaultsToStudyUI() {
   $("#displayMode").value = settings.displayMode;
   $("#questionCount").value = settings.questionCount;
@@ -698,7 +710,8 @@ function nextTypeQuestionOrFinish() {
 
 function readStudySetup() {
   const wt = $$("input[name='wordType']").find(r => r.checked)?.value || "verbs";
-  const verbForms = $$(".vf").filter(x => x.checked).map(x => x.value);
+  const verbFormGroup = $$("input[name='verbFormGroup']").find(r => r.checked)?.value || "masu";
+  const verbForms = $$(verbFormGroup === "masu" ? ".vf-masu" : ".vf-te").filter(x => x.checked).map(x => x.value);
   const adjForms = $$(".af").filter(x => x.checked).map(x => x.value);
   return {
     wt,
@@ -717,7 +730,8 @@ function readStudySetup() {
 
 function readSpeakingSetup() {
   const wt = $$("input[name='speakingWordType']").find(r => r.checked)?.value || "verbs";
-  const verbForms = $$(".svf").filter(x => x.checked).map(x => x.value);
+  const speakingVerbFormGroup = $$("input[name='speakingVerbFormGroup']").find(r => r.checked)?.value || "masu";
+  const verbForms = $$(speakingVerbFormGroup === "masu" ? ".svf-masu" : ".svf-te").filter(x => x.checked).map(x => x.value);
   const adjForms = $$(".saf").filter(x => x.checked).map(x => x.value);
   return {
     wt,
@@ -857,7 +871,15 @@ function startSpeakingSession(setup, forceStarred = false, forceClass = false) {
 }
 
 function describeFormBase(itemType, form) {
-  const mapV = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative", te:"Te-form" };
+  const mapV = {
+    present:"Present",
+    negative:"Negative",
+    past:"Past",
+    past_negative:"Past negative",
+    te:"Te-form",
+    te_mo_ii_desu_ka:"てもいいですか",
+    te_wa_ikemasen:"てはいけません"
+  };
   const mapA = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
   return (itemType === "verb") ? mapV[form] : mapA[form];
 }
@@ -881,7 +903,15 @@ function describeFormHint(item, form) {
       const last = kana.slice(-1);
       return godanTeEndings[last] || "(て / で)";
     })();
-    const map = { present:"(ます)", negative:"(ません)", past:"(ました)", past_negative:"(ませんでした)", te:teHint };
+    const map = {
+      present:"(ます)",
+      negative:"(ません)",
+      past:"(ました)",
+      past_negative:"(ませんでした)",
+      te:teHint,
+      te_mo_ii_desu_ka:"(〜てもいいですか / 〜でもいいですか)",
+      te_wa_ikemasen:"(〜てはいけません / 〜ではいけません)"
+    };
     return map[form] || "";
   }
 
@@ -1028,7 +1058,7 @@ function buildAndShowChoices(_correctAnswer, q) {
   const { displayMode } = session.setup;
   const allItems = (q.item.type === "verb") ? verbs : adjs;
   const formsForType = q.item.type === "verb"
-    ? ["present", "negative", "past", "past_negative", "te"]
+    ? ["present", "negative", "past", "past_negative", "te", "te_mo_ii_desu_ka", "te_wa_ikemasen"]
     : ["present", "negative", "past", "past_negative"];
 
   const makeAnswerFor = (it, form = q.form) => {
@@ -1410,7 +1440,9 @@ function renderView() {
     const chips = document.createElement("div");
     chips.className = "chips";
 
-    const forms = (it.type === "verb") ? ["present","past","negative","past_negative","te"] : ["present","past","negative","past_negative"];
+    const forms = (it.type === "verb")
+      ? ["present","past","negative","past_negative","te","te_mo_ii_desu_ka","te_wa_ikemasen"]
+      : ["present","past","negative","past_negative"];
 
     const out = document.createElement("div");
     out.className = "meta";
@@ -1420,7 +1452,15 @@ function renderView() {
       const c = document.createElement("button");
       c.className = "chip";
       c.textContent = (it.type === "verb")
-        ? ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg",te:"Te"}[form])
+        ? ({
+          present:"Present",
+          past:"Past",
+          negative:"Neg",
+          past_negative:"PastNeg",
+          te:"Te",
+          te_mo_ii_desu_ka:"Te+OK?",
+          te_wa_ikemasen:"Te+NG"
+        }[form])
         : ({present:"Present",past:"Past",negative:"Neg",past_negative:"PastNeg"}[form]);
 
       c.addEventListener("click", () => {
@@ -1467,6 +1507,8 @@ function initEvents() {
 
   $$("input[name='wordType']").forEach(r => r.addEventListener("change", applyWordTypeUI));
   $$("input[name='speakingWordType']").forEach(r => r.addEventListener("change", applySpeakingWordTypeUI));
+  $$("input[name='verbFormGroup']").forEach(r => r.addEventListener("change", applyVerbFormGroupUI));
+  $$("input[name='speakingVerbFormGroup']").forEach(r => r.addEventListener("change", applySpeakingVerbFormGroupUI));
   $("#typeGameMode").addEventListener("change", applyTypeGameModeUI);
 
   $("#showWordTypeHint").addEventListener("change", () => {
@@ -1680,6 +1722,8 @@ async function init() {
   initEvents();
   applyWordTypeUI();
   applySpeakingWordTypeUI();
+  applyVerbFormGroupUI();
+  applySpeakingVerbFormGroupUI();
   applyTypeGameModeUI();
   loadDefaultsToStudyUI();
   loadSettingsUI();
