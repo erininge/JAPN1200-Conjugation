@@ -16,7 +16,7 @@
         <div class="dot"><img src="icon-192.png" alt="" width="28" height="28" style="border-radius:8px"></div>
         <div>
           <h1>JAPN1200 Conjugation</h1>
-          <div class="sub">v1.7.8</div>
+          <div class="sub">v1.7.9</div>
         </div>
       </div>
       <button class="secondary refreshBtn" id="btnRefreshApp" title="Check for updates and reload">🔄 Refresh app</button>
@@ -68,13 +68,21 @@
 
       <div class="row">
         <div id="verbFormsBox">
-          <label>Verbs: which forms?</label>
-          <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
-            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="present" checked> Present (ます)</label>
-            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="negative" checked> Negative (ません)</label>
-            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="past" checked> Past (ました)</label>
-            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="past_negative" checked> Past negative (ませんでした)</label>
-            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf" value="te" checked> Te-form (て / で)</label>
+          <label>Verbs: choose form group</label>
+          <div class="row" style="margin-top:10px; gap:14px">
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="verbFormGroup" value="masu" checked> ます form</label>
+            <label style="flex:0; white-space:nowrap"><input type="radio" name="verbFormGroup" value="te"> て form</label>
+          </div>
+          <div class="row" id="verbMasuForms" style="margin-top:10px; gap:14px; align-items:flex-start">
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-masu" value="present" checked> Present (ます)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-masu" value="negative" checked> Negative (ません)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-masu" value="past" checked> Past (ました)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-masu" value="past_negative" checked> Past negative (ませんでした)</label>
+          </div>
+          <div class="row hidden" id="verbTeForms" style="margin-top:10px; gap:14px; align-items:flex-start">
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-te" value="te" checked> て form (て / で)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-te" value="te_mo_ii_desu_ka" checked> てもいいですか (may I?)</label>
+            <label style="flex:0; white-space:nowrap"><input type="checkbox" class="vf vf-te" value="te_wa_ikemasen" checked> てはいけません (may not)</label>
           </div>
         </div>
 
@@ -197,13 +205,21 @@
 
         <div class="row">
           <div id="speakingVerbFormsBox">
-            <label>Verbs: which forms?</label>
-            <div class="row" style="margin-top:10px; gap:14px; align-items:flex-start">
-              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="present" checked> Present (ます)</label>
-              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="negative" checked> Negative (ません)</label>
-              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="past" checked> Past (ました)</label>
-              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="past_negative" checked> Past negative (ませんでした)</label>
-              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf" value="te" checked> Te-form (て / で)</label>
+            <label>Verbs: choose form group</label>
+            <div class="row" style="margin-top:10px; gap:14px">
+              <label style="flex:0; white-space:nowrap"><input type="radio" name="speakingVerbFormGroup" value="masu" checked> ます form</label>
+              <label style="flex:0; white-space:nowrap"><input type="radio" name="speakingVerbFormGroup" value="te"> て form</label>
+            </div>
+            <div class="row" id="speakingVerbMasuForms" style="margin-top:10px; gap:14px; align-items:flex-start">
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-masu" value="present" checked> Present (ます)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-masu" value="negative" checked> Negative (ません)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-masu" value="past" checked> Past (ました)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-masu" value="past_negative" checked> Past negative (ませんでした)</label>
+            </div>
+            <div class="row hidden" id="speakingVerbTeForms" style="margin-top:10px; gap:14px; align-items:flex-start">
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-te" value="te" checked> て form (て / で)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-te" value="te_mo_ii_desu_ka" checked> てもいいですか (may I?)</label>
+              <label style="flex:0; white-space:nowrap"><input type="checkbox" class="svf svf-te" value="te_wa_ikemasen" checked> てはいけません (may not)</label>
             </div>
           </div>
 
@@ -362,6 +378,10 @@
               <span class="exp-arrow">▾</span>
             </summary>
             <div class="exp-content">
+              <p class="meta" style="margin:0 0 10px">
+                The app also drills these て-form patterns: <strong>〜てもいいですか</strong> (may I?) and
+                <strong>〜てはいけません / 〜ではいけません</strong> (may not).
+              </p>
               <table class="table exp-table">
                 <thead>
                   <tr>
@@ -409,6 +429,10 @@
               <span class="exp-arrow">▾</span>
             </summary>
             <div class="exp-content">
+              <p class="meta" style="margin:0 0 10px">
+                Also used in this app: <strong>〜てもいいですか</strong> (may I?) and
+                <strong>〜てはいけません / 〜ではいけません</strong> (may not).
+              </p>
               <table class="table exp-table">
                 <thead>
                   <tr>

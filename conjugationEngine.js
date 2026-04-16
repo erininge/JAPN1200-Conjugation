@@ -27,6 +27,15 @@ export function conjugateVerb(item, form) {
   const kanji = item.jp_kanji || "";
   const cls = item.class;
 
+  if (form === "te_mo_ii_desu_ka" || form === "te_wa_ikemasen") {
+    const te = conjugateVerb(item, "te");
+    const tail = form === "te_mo_ii_desu_ka" ? "もいいですか" : "はいけません";
+    return {
+      kana: te.kana + tail,
+      kanji: te.kanji ? te.kanji + tail : ""
+    };
+  }
+
   let stemKana = "";
   let stemKanji = "";
 
