@@ -877,8 +877,8 @@ function describeFormBase(itemType, form) {
     past:"Past",
     past_negative:"Past negative",
     te:"Te-form",
-    te_mo_ii_desu_ka:"てもいいですか",
-    te_wa_ikemasen:"てはいけません"
+    te_mo_ii_desu_ka:"May I?",
+    te_wa_ikemasen:"May not"
   };
   const mapA = { present:"Present", negative:"Negative", past:"Past", past_negative:"Past negative" };
   return (itemType === "verb") ? mapV[form] : mapA[form];
