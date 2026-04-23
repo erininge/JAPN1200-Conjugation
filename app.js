@@ -1377,6 +1377,60 @@ function updateViewWordClassOptions() {
   select.value = stillExists ? previous : "all";
 }
 
+const VIEW_SYNONYM_GROUPS = [
+  ["pretty", "beautiful", "clean", "lovely", "attractive"],
+  ["big", "large", "huge"],
+  ["small", "little", "tiny"],
+  ["fast", "quick", "rapid"],
+  ["slow", "sluggish"],
+  ["good", "great", "nice", "excellent"],
+  ["bad", "poor", "terrible"],
+  ["new", "fresh", "recent"],
+  ["old", "ancient", "aged"],
+  ["hot", "warm"],
+  ["cold", "chilly", "cool"],
+  ["easy", "simple"],
+  ["hard", "difficult", "tough"]
+];
+
+const VIEW_SYNONYM_MAP = (() => {
+  const map = new Map();
+  for (const group of VIEW_SYNONYM_GROUPS) {
+    const normalized = group.map(token => token.toLowerCase());
+    for (const token of normalized) {
+      map.set(token, normalized.filter(other => other !== token));
+    }
+  }
+  return map;
+})();
+
+function normalizeSearchToken(token) {
+  return token.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "").trim();
+}
+
+function getSearchTokens(rawQuery) {
+  return (rawQuery || "")
+    .split(/\s+/)
+    .map(normalizeSearchToken)
+    .filter(Boolean);
+}
+
+function matchesViewSearch(item, searchTokens, rawQuery) {
+  const english = (item.en || "").toLowerCase();
+  const blob = `${item.jp_kana || ""} ${item.jp_kanji || ""} ${english}`.toLowerCase();
+  const englishTokens = new Set(english.match(/[\p{L}\p{N}]+/gu) || []);
+
+  if (!searchTokens.length) return blob.includes(rawQuery);
+
+  return searchTokens.every((token) => {
+    if (blob.includes(token) || englishTokens.has(token)) return true;
+
+    const synonyms = VIEW_SYNONYM_MAP.get(token);
+    if (!synonyms) return false;
+    return synonyms.some(syn => englishTokens.has(syn) || blob.includes(syn));
+  });
+}
+
 function renderView() {
   const set = $("#viewSet").value;
   const display = $("#viewDisplay").value;
@@ -1385,18 +1439,14 @@ function renderView() {
   const wordClass = $("#viewWordClass").value;
   const sort = $("#viewSort").value;
   const q = ($("#viewSearch").value || "").trim().toLowerCase();
+  const searchTokens = getSearchTokens(q);
 
   let items = (set === "verbs") ? verbs.slice() : adjs.slice();
   if (wordClass !== "all") items = items.filter(it => it.class === wordClass);
   if (starOnly) items = items.filter(it => isStarred(it.id));
   if (classOnly) items = items.filter(it => isClassMarked(it.id));
 
-  if (q) {
-    items = items.filter(it => {
-      const blob = `${it.jp_kana} ${it.jp_kanji || ""} ${it.en || ""}`.toLowerCase();
-      return blob.includes(q);
-    });
-  }
+  if (q) items = items.filter(it => matchesViewSearch(it, searchTokens, q));
 
   if (sort === "starred") {
     items.sort((a,b) => (isStarred(b.id) - isStarred(a.id)) || a.jp_kana.localeCompare(b.jp_kana));
