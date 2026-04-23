@@ -1415,20 +1415,29 @@ function getSearchTokens(rawQuery) {
     .filter(Boolean);
 }
 
-function matchesViewSearch(item, searchTokens, rawQuery) {
+function getSearchTokenGroups(rawQuery) {
+  return (rawQuery || "")
+    .split(/[,\n;|]+/)
+    .map(group => getSearchTokens(group))
+    .filter(group => group.length);
+}
+
+function matchesViewSearch(item, searchTokenGroups, rawQuery) {
   const english = (item.en || "").toLowerCase();
   const blob = `${item.jp_kana || ""} ${item.jp_kanji || ""} ${english}`.toLowerCase();
   const englishTokens = new Set(english.match(/[\p{L}\p{N}]+/gu) || []);
 
-  if (!searchTokens.length) return blob.includes(rawQuery);
+  if (!searchTokenGroups.length) return blob.includes(rawQuery);
 
-  return searchTokens.every((token) => {
-    if (blob.includes(token) || englishTokens.has(token)) return true;
+  return searchTokenGroups.some((searchTokens) => (
+    searchTokens.every((token) => {
+      if (blob.includes(token) || englishTokens.has(token)) return true;
 
-    const synonyms = VIEW_SYNONYM_MAP.get(token);
-    if (!synonyms) return false;
-    return synonyms.some(syn => englishTokens.has(syn) || blob.includes(syn));
-  });
+      const synonyms = VIEW_SYNONYM_MAP.get(token);
+      if (!synonyms) return false;
+      return synonyms.some(syn => englishTokens.has(syn) || blob.includes(syn));
+    })
+  ));
 }
 
 function renderView() {
@@ -1439,14 +1448,14 @@ function renderView() {
   const wordClass = $("#viewWordClass").value;
   const sort = $("#viewSort").value;
   const q = ($("#viewSearch").value || "").trim().toLowerCase();
-  const searchTokens = getSearchTokens(q);
+  const searchTokenGroups = getSearchTokenGroups(q);
 
   let items = (set === "verbs") ? verbs.slice() : adjs.slice();
   if (wordClass !== "all") items = items.filter(it => it.class === wordClass);
   if (starOnly) items = items.filter(it => isStarred(it.id));
   if (classOnly) items = items.filter(it => isClassMarked(it.id));
 
-  if (q) items = items.filter(it => matchesViewSearch(it, searchTokens, q));
+  if (q) items = items.filter(it => matchesViewSearch(it, searchTokenGroups, q));
 
   if (sort === "starred") {
     items.sort((a,b) => (isStarred(b.id) - isStarred(a.id)) || a.jp_kana.localeCompare(b.jp_kana));
