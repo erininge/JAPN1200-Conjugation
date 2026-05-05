@@ -780,6 +780,62 @@ function randPick(arr) {
   return arr[Math.floor(Math.random()*arr.length)];
 }
 
+function makeQuestion(task, setup) {
+  let direction = setup.questionMode;
+  if (direction === "mixed") direction = (Math.random() < 0.5) ? "dict_to_conj" : "conj_to_dict";
+  return {
+    item: task.item,
+    form: task.form,
+    direction,
+    answered: false,
+    correct: false,
+    missCount: task.missCount || 0,
+    isReview: !!task.isReview
+  };
+}
+
+function formatMissCount(count) {
+  return `${count} ${count === 1 ? "time" : "times"}`;
+}
+
+function scheduleSmartReview() {
+  if (!settings.smartGrading || !session) return;
+
+  const q = session.questions[session.idx];
+  const missCount = (q.missCount || 0) + 1;
+  q.missCount = missCount;
+
+  const delay = 3 + Math.floor(Math.random() * 3);
+  const insertAt = Math.min(session.idx + delay + 1, session.questions.length);
+  const reviewQuestion = {
+    item: q.item,
+    form: q.form,
+    direction: q.direction,
+    answered: false,
+    correct: false,
+    missCount,
+    isReview: true
+  };
+
+  session.questions.splice(insertAt, 0, reviewQuestion);
+  const remaining = insertAt - session.idx - 1;
+  showToast(`We'll try this again in ${remaining} ${remaining === 1 ? "question" : "questions"}.`);
+}
+
+function renderSmartReviewNotice(q) {
+  const notice = $("#reviewNotice");
+  if (!notice) return;
+
+  if (!q.isReview || !q.missCount) {
+    notice.textContent = "";
+    notice.classList.add("hidden");
+    return;
+  }
+
+  notice.innerHTML = `<strong>Review time:</strong> You missed this before ${formatMissCount(q.missCount)}. Let’s try again!`;
+  notice.classList.remove("hidden");
+}
+
 function startSession(setup, forceStarred=false, forceClass=false) {
   if (forceStarred) setup.starredOnly = true;
   if (forceClass) setup.classOnly = true;
@@ -805,12 +861,7 @@ function startSession(setup, forceStarred=false, forceClass=false) {
   }
 
   const uniqueTasks = shuffle(pool.slice()).slice(0, targetQuestionCount);
-  const questions = [];
-  for (const task of uniqueTasks) {
-    let direction = setup.questionMode;
-    if (direction === "mixed") direction = (Math.random() < 0.5) ? "dict_to_conj" : "conj_to_dict";
-    questions.push({ item: task.item, form: task.form, direction, answered:false, correct:false });
-  }
+  const questions = uniqueTasks.map(task => makeQuestion(task, setup));
 
   session = { setup, idx:0, questions, awaitingNext:false, lastChoices:null };
   showQuiz();
@@ -957,6 +1008,7 @@ function renderQuestion() {
   const promptWithHint = showHintTag ? `${promptJP} ${getWordTypeHint(q.item)}` : promptJP;
   $("#prompt").textContent = promptWithHint;
   $("#subPrompt").textContent = answerLabel;
+  renderSmartReviewNotice(q);
 
   const englishLine = $("#englishPrompt");
   if (showEnglish && q.item.en) {
@@ -1179,6 +1231,7 @@ function checkAnswer(userAnswer) {
   q.answered = true;
   q.correct = correct;
   recordStats(q, correct);
+  if (!correct) scheduleSmartReview();
 
   if (correct) {
     $("#feedback").textContent = "✓ Correct";
